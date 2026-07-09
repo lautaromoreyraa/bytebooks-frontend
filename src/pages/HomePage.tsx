@@ -42,12 +42,11 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    const hasFreshCache =
+    if (
       cachedLibros !== null &&
       cachedCategorias !== null &&
-      Date.now() - cachedAt < HOME_CACHE_TTL_MS;
-
-    if (hasFreshCache) {
+      Date.now() - cachedAt < HOME_CACHE_TTL_MS
+    ) {
       setLibros(cachedLibros);
       setCategorias(cachedCategorias);
       setLoading(false);

@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { GoogleBookCandidate, ImportacionResult, Libro, Page } from "../types";
+import type { GoogleBookCandidate, ImportacionResult, Libro} from "../types";
 
 export interface CreateLibroPayload {
   titulo: string;
