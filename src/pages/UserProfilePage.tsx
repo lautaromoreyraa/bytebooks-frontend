@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { getUsuario, getFavoritosDeUsuario } from "../api/usuarios";
 import { useAuth } from "../context/AuthContext";
 import EditProfileModal from "../components/EditProfileModal";
 import BookCard from "../components/BookCard";
-import Spinner from "../components/Spinner";
+import EmptyState from "../components/EmptyState";
+import { BookGridSkeleton, ProfileSkeleton } from "../components/Skeleton";
 import type { Libro, UsuarioPerfil } from "../types";
 
 export default function UserProfilePage() {
@@ -37,98 +38,149 @@ export default function UserProfilePage() {
       .finally(() => setLoadingFavoritos(false));
   }, [id]);
 
-  if (loading) return <Spinner />;
-  if (error || !usuario)
-    return <p className="text-zinc-400 text-sm">{error ?? "Usuario no encontrado."}</p>;
+  if (loading) return <ProfileSkeleton />;
+
+  if (error || !usuario) {
+    return (
+      <EmptyState
+        variant="warning"
+        title="No encontramos este perfil"
+        description={error ?? "El usuario no existe o el enlace está mal escrito."}
+        action={
+          <Link to="/" className="btn-secondary">
+            Ir al catálogo
+          </Link>
+        }
+      />
+    );
+  }
 
   const iniciales = `${usuario.nombre[0]}${usuario.apellido[0]}`.toUpperCase();
 
   return (
     <div>
-      {/* Header de perfil */}
-      <div className="max-w-sm mb-8">
-        <div className="flex items-center gap-4 mb-4">
+      <header className="mb-12">
+        <div className="flex flex-wrap items-start gap-5">
+          {/* Squircle en lugar del círculo de avatar de siempre. */}
           {usuario.fotoPerfil ? (
             <img
               src={usuario.fotoPerfil}
-              alt={usuario.nombre}
-              className="w-14 h-14 rounded-full object-cover border border-zinc-700"
+              alt={`Foto de ${usuario.nombre} ${usuario.apellido}`}
+              className="h-16 w-16 flex-shrink-0 rounded-2xl object-cover shadow-card ring-1 ring-inset ring-ink-50/[0.08]"
             />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-zinc-700 flex items-center justify-center text-zinc-300 font-medium text-lg">
+            <div
+              aria-hidden="true"
+              className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl
+                         bg-ink-800 font-display text-xl font-semibold text-brass-400
+                         shadow-card ring-1 ring-inset ring-ink-50/[0.08]"
+            >
               {iniciales}
             </div>
           )}
-          <div className="flex-1">
-            <h1 className="text-xl font-semibold text-zinc-100">
+
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display text-3xl font-semibold leading-tight tracking-tightest text-ink-50">
               {usuario.nombre} {usuario.apellido}
             </h1>
+            <p className="num mt-1.5 text-sm text-ink-500">
+              {favoritos.length} {favoritos.length === 1 ? "libro guardado" : "libros guardados"}
+            </p>
           </div>
 
           {isOwner && (
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="flex-shrink-0 px-3 py-1.5 text-sm border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-zinc-200 rounded-lg transition-colors"
-            >
+            <button onClick={() => setShowEditModal(true)} className="btn-secondary flex-shrink-0">
               Editar perfil
             </button>
           )}
         </div>
 
-        {usuario.descripcion && (
-          <p className="text-zinc-400 text-sm leading-relaxed">{usuario.descripcion}</p>
-        )}
-
-        {isOwner && !usuario.descripcion && (
-          <p className="text-zinc-600 text-sm italic">
-            Todavía no agregaste una descripción.{" "}
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="text-violet-500 hover:text-violet-400 not-italic underline"
-            >
-              Agregar una
-            </button>
+        {usuario.descripcion ? (
+          <p className="prose-measure mt-6 text-[15px] leading-relaxed text-ink-300">
+            {usuario.descripcion}
           </p>
+        ) : (
+          isOwner && (
+            <p className="mt-6 text-sm text-ink-400">
+              Tu perfil no tiene descripción.{" "}
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="rounded text-brass-400 underline decoration-brass-500/40 underline-offset-4 transition-colors duration-200 hover:text-brass-300 hover:decoration-brass-400"
+              >
+                Escribí uno
+              </button>
+              .
+            </p>
+          )
         )}
-      </div>
+      </header>
 
-      {/* Favoritos */}
-      <div className="border-t border-zinc-800 pt-6">
-        <h2 className="text-lg font-medium text-zinc-100 mb-4">
+      <section className="border-t border-ink-800/80 pt-10">
+        <h2 className="mb-8 font-display text-2xl font-semibold tracking-tight text-ink-50">
           Libros favoritos
           {favoritos.length > 0 && (
-            <span className="ml-2 text-base font-normal text-zinc-500">({favoritos.length})</span>
+            <span className="num ml-2.5 text-lg font-normal text-ink-500">
+              {favoritos.length}
+            </span>
           )}
         </h2>
 
-        {loadingFavoritos && <Spinner />}
+        {loadingFavoritos && <BookGridSkeleton count={4} />}
 
         {!loadingFavoritos && errorFavoritos && (
-          <p className="text-red-400 text-sm">{errorFavoritos}</p>
+          <EmptyState
+            variant="warning"
+            title="No pudimos cargar los favoritos"
+            description={errorFavoritos}
+          />
         )}
 
         {!loadingFavoritos && !errorFavoritos && favoritos.length === 0 && (
-          <p className="text-zinc-500 text-sm">
-            {isOwner ? "Todavía no agregaste favoritos." : "Este usuario no tiene favoritos."}
-          </p>
+          <EmptyState
+            variant="bookmark"
+            title={isOwner ? "Tu lista está vacía" : "Sin favoritos públicos"}
+            description={
+              isOwner
+                ? "Guardá libros desde el catálogo y van a aparecer acá."
+                : `${usuario.nombre} todavía no guardó ningún libro.`
+            }
+            action={
+              isOwner ? (
+                <Link to="/" className="btn-primary">
+                  Explorar el catálogo
+                </Link>
+              ) : undefined
+            }
+          />
         )}
 
         {!loadingFavoritos && !errorFavoritos && favoritos.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {favoritos.map((libro) => (
-              <BookCard
+          <div className="grid grid-cols-2 gap-x-5 gap-y-9 sm:grid-cols-3 xl:grid-cols-4">
+            {favoritos.map((libro, i) => (
+              <div
                 key={libro.id}
-                libro={libro}
-                initialEsFavorito
-                skipFavoritosFetch
-                onFavoritoChange={(_libroId, esFav) => {
-                  if (!esFav) setFavoritos((prev) => prev.filter((l) => l.id !== libro.id));
-                }}
-              />
+                className="animate-fade-up"
+                style={{ animationDelay: `${Math.min(i, 11) * 40}ms` }}
+              >
+                {/* En el perfil ajeno el marcador refleja los favoritos de quien
+                    mira, no los del dueño del perfil: no se puede dar por hecho. */}
+                <BookCard
+                  libro={libro}
+                  initialEsFavorito={isOwner}
+                  skipFavoritosFetch={isOwner}
+                  onFavoritoChange={
+                    isOwner
+                      ? (libroId, esFav) => {
+                          if (!esFav) setFavoritos((prev) => prev.filter((l) => l.id !== libroId));
+                        }
+                      : undefined
+                  }
+                />
+              </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
 
       {showEditModal && (
         <EditProfileModal
