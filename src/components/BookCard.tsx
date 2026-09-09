@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { addFavorito, removeFavorito, getFavoritos } from "../api/usuarios";
 import { useAuth } from "../context/AuthContext";
+import { puedeEditarLibros } from "../lib/permisos";
 import { getOpenLibraryCover } from "../lib/covers";
 import type { Libro } from "../types";
 
@@ -12,10 +13,6 @@ interface Props {
   onFavoritoChange?: (libroId: string, esFavorito: boolean) => void;
   initialEsFavorito?: boolean;
   skipFavoritosFetch?: boolean;
-}
-
-function canManageBooks(role: string) {
-  return role === "ROLE_ADMIN" || role === "ROLE_MODERATOR";
 }
 
 /** Tinte estable por título: dos libros sin portada nunca salen idénticos. */
@@ -101,7 +98,7 @@ export default function BookCard({
     }
   }
 
-  const puedeGestionar = Boolean(auth && canManageBooks(auth.role) && (onEditClick || onDeleteClick));
+  const puedeGestionar = puedeEditarLibros(auth?.role) && Boolean(onEditClick || onDeleteClick);
 
   useEffect(() => {
     if (!menuOpen) return;

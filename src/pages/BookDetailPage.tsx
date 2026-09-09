@@ -4,6 +4,7 @@ import { getLibro, deleteLibro } from "../api/libros";
 import { getResenas, createResena, deleteResena } from "../api/resenas";
 import { addFavorito, removeFavorito, getFavoritos } from "../api/usuarios";
 import { useAuth } from "../context/AuthContext";
+import { puedeEditarLibros } from "../lib/permisos";
 import { getOpenLibraryCover } from "../lib/covers";
 import StarRating from "../components/StarRating";
 import EditBookModal from "../components/EditBookModal";
@@ -13,10 +14,6 @@ import { BookDetailSkeleton } from "../components/Skeleton";
 import type { Libro, Resena } from "../types";
 
 const PENDING_RESENA_KEY = "pending_resena";
-
-function canManageBooks(role: string) {
-  return role === "ROLE_ADMIN" || role === "ROLE_MODERATOR";
-}
 
 function BackLink() {
   return (
@@ -31,6 +28,13 @@ function BackLink() {
       Volver al catálogo
     </Link>
   );
+}
+
+/** El backend expone `fechaResena` como java.util.Date: puede llegar ISO o
+ *  epoch segun la config de Jackson. Normalizamos antes de mostrarla. */
+function parseFecha(valor: string): Date | null {
+  const fecha = new Date(/^\d+$/.test(valor) ? Number(valor) : valor);
+  return Number.isNaN(fecha.getTime()) ? null : fecha;
 }
 
 function MetaChip({ label, value }: { label: string; value: string }) {
@@ -49,6 +53,7 @@ export default function BookDetailPage() {
 
   const [libro, setLibro] = useState<Libro | null>(null);
   const [resenas, setResenas] = useState<Resena[]>([]);
+  const [totalResenas, setTotalResenas] = useState(0);
   const [esFavorito, setEsFavorito] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +71,8 @@ export default function BookDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [resenaAEliminar, setResenaAEliminar] = useState<string | null>(null);
   const [borrandoResena, setBorrandoResena] = useState(false);
+  const [paginaResenas, setPaginaResenas] = useState(0);
+  const [cargandoMas, setCargandoMas] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -83,8 +90,10 @@ export default function BookDetailPage() {
 
         if (resenasResult.status === "fulfilled") {
           setResenas(resenasResult.value.content);
+          setTotalResenas(resenasResult.value.totalElements);
         } else {
           setResenas([]);
+          setTotalResenas(0);
         }
       })
       .finally(() => setLoading(false));
@@ -181,6 +190,7 @@ export default function BookDetailPage() {
     try {
       const nueva = await createResena(id, { comentario, puntuacion });
       setResenas((prev) => [nueva, ...prev]);
+      setTotalResenas((prev) => prev + 1);
       setComentario("");
       setPuntuacion(5);
     } catch (err) {
@@ -190,12 +200,34 @@ export default function BookDetailPage() {
     }
   }
 
+  async function handleCargarMasResenas() {
+    if (!id || cargandoMas) return;
+    setCargandoMas(true);
+    try {
+      const siguiente = paginaResenas + 1;
+      const pagina = await getResenas(id, siguiente);
+      // Se filtran las ya presentes: si alguien publica mientras leés, la API
+      // corre los elementos entre páginas y llegarían duplicados.
+      setResenas((prev) => {
+        const vistas = new Set(prev.map((r) => r.id));
+        return [...prev, ...pagina.content.filter((r) => !vistas.has(r.id))];
+      });
+      setTotalResenas(pagina.totalElements);
+      setPaginaResenas(siguiente);
+    } catch {
+      // sin cambios: el botón sigue disponible para reintentar
+    } finally {
+      setCargandoMas(false);
+    }
+  }
+
   async function handleConfirmDeleteResena() {
     if (!resenaAEliminar) return;
     setBorrandoResena(true);
     try {
       await deleteResena(resenaAEliminar);
       setResenas((prev) => prev.filter((r) => r.id !== resenaAEliminar));
+      setTotalResenas((prev) => Math.max(0, prev - 1));
       setResenaAEliminar(null);
     } catch {
       // el diálogo queda abierto si falla
@@ -235,8 +267,9 @@ export default function BookDetailPage() {
   }
 
   const fallbackCover = libro.portada;
+  const todasCargadas = resenas.length >= totalResenas;
   const promedio =
-    resenas.length > 0
+    resenas.length > 0 && todasCargadas
       ? resenas.reduce((acc, r) => acc + r.puntuacion, 0) / resenas.length
       : null;
 
@@ -309,7 +342,7 @@ export default function BookDetailPage() {
               {libro.categorias.map((c) => c.nombre).join(" · ")}
             </p>
 
-            {auth && canManageBooks(auth.role) && (
+            {puedeEditarLibros(auth?.role) && (
               <div ref={menuRef} className="relative flex-shrink-0">
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
@@ -371,8 +404,8 @@ export default function BookDetailPage() {
               <StarRating value={Math.round(promedio)} size="md" />
               <span className="text-sm text-ink-400">
                 <span className="num text-ink-100">{promedio.toFixed(1)}</span> ·{" "}
-                <span className="num">{resenas.length}</span>{" "}
-                {resenas.length === 1 ? "reseña" : "reseñas"}
+                <span className="num">{totalResenas}</span>{" "}
+                {totalResenas === 1 ? "reseña" : "reseñas"}
               </span>
             </div>
           )}
@@ -403,9 +436,9 @@ export default function BookDetailPage() {
       <section className="mt-16 border-t border-ink-800/80 pt-12">
         <h2 className="mb-8 font-display text-2xl font-semibold tracking-tight text-ink-50">
           Reseñas
-          {resenas.length > 0 && (
+          {totalResenas > 0 && (
             <span className="num ml-2.5 text-lg font-normal text-ink-500">
-              {resenas.length}
+              {totalResenas}
             </span>
           )}
         </h2>
@@ -506,16 +539,22 @@ export default function BookDetailPage() {
                         {resena.nombreUsuario}
                       </span>
                       <StarRating value={resena.puntuacion} />
-                      <time
-                        dateTime={resena.fechaResena}
-                        className="num ml-auto text-xs text-ink-500"
-                      >
-                        {new Date(resena.fechaResena).toLocaleDateString("es-AR", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </time>
+                      {(() => {
+                        const fecha = parseFecha(resena.fechaResena);
+                        if (!fecha) return null;
+                        return (
+                          <time
+                            dateTime={fecha.toISOString()}
+                            className="num ml-auto text-xs text-ink-500"
+                          >
+                            {fecha.toLocaleDateString("es-AR", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </time>
+                        );
+                      })()}
                     </div>
 
                     {resena.comentario && (
@@ -524,7 +563,7 @@ export default function BookDetailPage() {
                       </p>
                     )}
 
-                    {auth && (auth.userId === resena.usuarioId || canManageBooks(auth.role)) && (
+                    {auth && (auth.userId === resena.usuarioId || puedeEditarLibros(auth.role)) && (
                       <button
                         onClick={() => setResenaAEliminar(resena.id)}
                         className="mt-3 rounded text-xs text-ink-500 transition-colors duration-200 hover:text-ember-400"
@@ -535,6 +574,22 @@ export default function BookDetailPage() {
                   </li>
                 ))}
               </ul>
+            )}
+
+            {/* La API pagina de a 10: sin esto el contador prometía reseñas
+                que no había forma de leer. */}
+            {!todasCargadas && (
+              <div className="mt-8 flex justify-center">
+                <button
+                  onClick={handleCargarMasResenas}
+                  disabled={cargandoMas}
+                  className="btn-secondary"
+                >
+                  {cargandoMas
+                    ? "Cargando…"
+                    : `Ver más reseñas (${totalResenas - resenas.length})`}
+                </button>
+              </div>
             )}
           </div>
         </div>

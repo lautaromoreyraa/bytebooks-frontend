@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { getUsuario, getFavoritosDeUsuario } from "../api/usuarios";
+import { getUsuario, getFavoritosDeUsuario, getFavoritos } from "../api/usuarios";
 import { useAuth } from "../context/AuthContext";
 import EditProfileModal from "../components/EditProfileModal";
 import BookCard from "../components/BookCard";
@@ -19,6 +19,7 @@ export default function UserProfilePage() {
   const [favoritos, setFavoritos] = useState<Libro[]>([]);
   const [loadingFavoritos, setLoadingFavoritos] = useState(true);
   const [errorFavoritos, setErrorFavoritos] = useState<string | null>(null);
+  const [misFavoritoIds, setMisFavoritoIds] = useState<Set<string>>(new Set());
 
   const isOwner = auth?.userId === id;
 
@@ -37,6 +38,24 @@ export default function UserProfilePage() {
       .catch(() => setErrorFavoritos("No se pudieron cargar los favoritos."))
       .finally(() => setLoadingFavoritos(false));
   }, [id]);
+
+  // Los favoritos de quien mira se piden una sola vez para toda la grilla. Si
+  // cada tarjeta los pidiera por su cuenta, un perfil ajeno con muchos libros
+  // dispararía una petición por tarjeta y agotaría el límite de la API.
+  useEffect(() => {
+    if (!auth || isOwner) return;
+
+    let cancelled = false;
+    getFavoritos()
+      .then((favs) => {
+        if (!cancelled) setMisFavoritoIds(new Set(favs.map((l) => l.id)));
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auth, isOwner]);
 
   if (loading) return <ProfileSkeleton />;
 
@@ -166,8 +185,8 @@ export default function UserProfilePage() {
                     mira, no los del dueño del perfil: no se puede dar por hecho. */}
                 <BookCard
                   libro={libro}
-                  initialEsFavorito={isOwner}
-                  skipFavoritosFetch={isOwner}
+                  initialEsFavorito={isOwner || (Boolean(auth) && misFavoritoIds.has(libro.id))}
+                  skipFavoritosFetch
                   onFavoritoChange={
                     isOwner
                       ? (libroId, esFav) => {

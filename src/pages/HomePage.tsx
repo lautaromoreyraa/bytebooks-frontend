@@ -8,6 +8,7 @@ import ConfirmDialog from "../components/ConfirmDialog";
 import EmptyState from "../components/EmptyState";
 import { BookGridSkeleton } from "../components/Skeleton";
 import { useAuth } from "../context/AuthContext";
+import { puedeCrearLibros } from "../lib/permisos";
 import { getFavoritos } from "../api/usuarios";
 import type { Libro, Categoria } from "../types";
 
@@ -16,10 +17,6 @@ const HOME_CACHE_TTL_MS = 30_000;
 let cachedLibros: Libro[] | null = null;
 let cachedCategorias: Categoria[] | null = null;
 let cachedAt = 0;
-
-function canManageBooks(role: string) {
-  return role === "ROLE_ADMIN" || role === "ROLE_MODERATOR";
-}
 
 function normalize(str: string) {
   return str
@@ -159,7 +156,7 @@ export default function HomePage() {
   );
 
   const hayFiltros = Boolean(normalizedQuery || categoriaSeleccionada);
-  const puedeGestionar = Boolean(auth && canManageBooks(auth.role));
+  const puedeAgregar = puedeCrearLibros(auth?.role);
 
   function limpiarFiltros() {
     setBusqueda("");
@@ -186,7 +183,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        {puedeGestionar && (
+        {puedeAgregar && (
           <button onClick={() => setShowAddModal(true)} className="btn-primary flex-shrink-0 self-start sm:self-auto">
             <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
               <path
@@ -321,12 +318,12 @@ export default function HomePage() {
             variant="shelf"
             title="La biblioteca está vacía"
             description={
-              puedeGestionar
+              puedeAgregar
                 ? "Cargá el primer libro a mano o importá varios de una desde Google Books."
                 : "Todavía no hay libros publicados. Volvé en un rato."
             }
             action={
-              puedeGestionar ? (
+              puedeAgregar ? (
                 <button onClick={() => setShowAddModal(true)} className="btn-primary">
                   Agregar el primer libro
                 </button>
