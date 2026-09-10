@@ -10,13 +10,12 @@ import { BookGridSkeleton } from "../components/Skeleton";
 import { useAuth } from "../context/AuthContext";
 import { puedeCrearLibros } from "../lib/permisos";
 import { getFavoritos } from "../api/usuarios";
+import {
+  guardarCatalogo,
+  leerCatalogo,
+  leerCatalogoVencido,
+} from "../lib/cacheDeCatalogo";
 import type { Libro, Categoria } from "../types";
-
-const HOME_CACHE_TTL_MS = 30_000;
-
-let cachedLibros: Libro[] | null = null;
-let cachedCategorias: Categoria[] | null = null;
-let cachedAt = 0;
 
 function normalize(str: string) {
   return str
@@ -45,12 +44,6 @@ export default function HomePage() {
   const cancelledRef = useRef(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  function updateCache(nextLibros: Libro[], nextCategorias: Categoria[]) {
-    cachedLibros = nextLibros;
-    cachedCategorias = nextCategorias;
-    cachedAt = Date.now();
-  }
-
   const loadHomeData = useCallback(async (retry = true) => {
     setLoading(true);
     setError(null);
@@ -62,7 +55,7 @@ export default function HomePage() {
 
       setLibros(librosList);
       setCategorias(categoriasList);
-      updateCache(librosList, categoriasList);
+      guardarCatalogo(librosList, categoriasList);
     } catch {
       if (retry && !cancelledRef.current) {
         window.setTimeout(() => {
@@ -75,9 +68,10 @@ export default function HomePage() {
 
       if (cancelledRef.current) return;
 
-      if (cachedLibros !== null && cachedCategorias !== null) {
-        setLibros(cachedLibros);
-        setCategorias(cachedCategorias);
+      const guardado = leerCatalogoVencido();
+      if (guardado) {
+        setLibros(guardado.libros);
+        setCategorias(guardado.categorias);
         setError(null);
       } else {
         setError("No se pudieron cargar los libros.");
@@ -92,13 +86,10 @@ export default function HomePage() {
   useEffect(() => {
     cancelledRef.current = false;
 
-    if (
-      cachedLibros !== null &&
-      cachedCategorias !== null &&
-      Date.now() - cachedAt < HOME_CACHE_TTL_MS
-    ) {
-      setLibros(cachedLibros);
-      setCategorias(cachedCategorias);
+    const fresco = leerCatalogo();
+    if (fresco) {
+      setLibros(fresco.libros);
+      setCategorias(fresco.categorias);
       setLoading(false);
       setError(null);
       return;
@@ -109,7 +100,9 @@ export default function HomePage() {
     return () => {
       cancelledRef.current = true;
     };
-  }, [loadHomeData]);
+    // `auth` entra en las dependencias porque el catalogo depende del rol: la
+    // API devuelve los libros ocultos a admin y moderador, y a nadie mas.
+  }, [loadHomeData, auth]);
 
   useEffect(() => {
     if (!auth) {
@@ -128,7 +121,7 @@ export default function HomePage() {
       await deleteLibro(libroAEliminar);
       setLibros((prev) => {
         const next = prev.filter((l) => l.id !== libroAEliminar);
-        updateCache(next, categorias);
+        guardarCatalogo(next, categorias);
         return next;
       });
       setLibroAEliminar(null);
@@ -359,7 +352,7 @@ export default function HomePage() {
           onCreated={(libro) => {
             setLibros((prev) => {
               const next = [libro, ...prev];
-              updateCache(next, categorias);
+              guardarCatalogo(next, categorias);
               return next;
             });
             setShowAddModal(false);
@@ -374,7 +367,7 @@ export default function HomePage() {
           onUpdated={(updated) => {
             setLibros((prev) => {
               const next = prev.map((l) => (l.id === updated.id ? updated : l));
-              updateCache(next, categorias);
+              guardarCatalogo(next, categorias);
               return next;
             });
             setLibroAEditar(null);

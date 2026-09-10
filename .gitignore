@@ -72,3 +72,15 @@ Thumbs.db
 *.swo
 *.tmp
 *.temp
+
+
+# ===========================
+# Notas de trabajo (no se versionan)
+# ===========================
+REVISION.md
+CLAUDE.md
+AGENTS.md
+MEMORY.md
+.claude/
+.cursorrules
+!README.md
