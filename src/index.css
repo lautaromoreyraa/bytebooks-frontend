@@ -3,8 +3,161 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-zinc-900 text-zinc-100;
-    font-family: system-ui, -apple-system, sans-serif;
+    @apply bg-ink-950 text-ink-200 font-sans antialiased;
+    font-feature-settings: "cv01", "ss01";
+  }
+
+  /* Grano fijo: rompe la planitud del fondo sin cargar una imagen. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Foco visible en todo lo que se navega por teclado. Nunca se elimina el
+     outline sin reemplazarlo por este anillo. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brass-400/80 ring-offset-2 ring-offset-ink-950;
+  }
+
+  ::selection {
+    @apply bg-brass-500/30 text-ink-50;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Barras de scroll acordes al fondo cálido. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: theme("colors.ink.700") transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    @apply rounded-full border-[3px] border-solid border-transparent bg-ink-700 bg-clip-content;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-600;
+  }
+}
+
+@layer components {
+  /* Contenedor único de página: una sola fuente de verdad para el ancho. */
+  .container-page {
+    @apply mx-auto w-full max-w-[78rem] px-5 sm:px-8;
+  }
+
+  /* Ancho de lectura cómodo, ~65 caracteres. */
+  .prose-measure {
+    @apply max-w-[62ch] leading-relaxed;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg text-sm font-medium
+           transition-all duration-200 ease-out
+           disabled:pointer-events-none disabled:opacity-45;
+  }
+
+  .btn-primary {
+    @apply btn bg-brass-500 px-4 py-2 text-ink-950 shadow-card
+           hover:bg-brass-400 active:translate-y-px active:bg-brass-500;
+  }
+
+  .btn-secondary {
+    @apply btn border border-ink-700 bg-ink-850 px-4 py-2 text-ink-200
+           hover:border-ink-600 hover:bg-ink-800 hover:text-ink-50 active:translate-y-px;
+  }
+
+  .btn-ghost {
+    @apply btn px-3 py-2 text-ink-400 hover:text-ink-100 active:translate-y-px;
+  }
+
+  .btn-danger {
+    @apply btn bg-ember-500 px-4 py-2 text-ink-950 hover:bg-ember-400 active:translate-y-px;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 text-sm text-ink-100
+           placeholder:text-ink-500 transition-colors duration-200
+           hover:border-ink-600 focus:border-brass-500 focus:outline-none
+           focus:ring-2 focus:ring-brass-500/25 focus:ring-offset-0;
+  }
+
+  .field-invalid {
+    @apply border-ember-500 focus:border-ember-500 focus:ring-ember-500/25;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-[0.12em] text-ink-400;
+  }
+
+  /* Metadatos numéricos: mono con cifras tabulares. */
+  .num {
+    @apply font-mono tabular-nums;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-ink-850;
+  }
+
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translate3d(-100%, 0, 0);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      theme("colors.ink.800"),
+      transparent
+    );
+    animation: skeleton-shimmer 1.6s infinite;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

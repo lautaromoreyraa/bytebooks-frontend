@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { addFavorito, removeFavorito, getFavoritos } from "../api/usuarios";
 import { useAuth } from "../context/AuthContext";
+import { puedeEditarLibros } from "../lib/permisos";
 import { getOpenLibraryCover } from "../lib/covers";
 import type { Libro } from "../types";
 
@@ -14,10 +15,39 @@ interface Props {
   skipFavoritosFetch?: boolean;
 }
 
-function canManageBooks(role: string) {
-  return role === "ROLE_ADMIN" || role === "ROLE_MODERATOR";
+/** Tinte estable por título: dos libros sin portada nunca salen idénticos. */
+function hueFromTitle(titulo: string) {
+  let hash = 0;
+  for (let i = 0; i < titulo.length; i++) {
+    hash = (hash * 31 + titulo.charCodeAt(i)) % 360;
+  }
+  return hash;
 }
 
+/** Portada tipográfica para los libros que no tienen imagen. */
+function FallbackCover({ libro }: { libro: Libro }) {
+  const hue = hueFromTitle(libro.titulo);
+
+  return (
+    <div
+      className="flex h-full w-full flex-col justify-between p-4"
+      style={{
+        backgroundImage: `radial-gradient(circle at 78% 8%, hsl(${hue} 24% 26%), transparent 58%), linear-gradient(165deg, #221f1c, #121110 62%)`,
+      }}
+    >
+      <span className="h-7 w-1 rounded-full bg-brass-500" />
+      <div>
+        <p className="font-display text-lg font-semibold leading-[1.15] tracking-tight text-ink-50 line-clamp-5">
+          {libro.titulo}
+        </p>
+        <span aria-hidden="true" className="mt-3 block h-px w-8 bg-brass-500/60" />
+        <p className="mt-2.5 text-[11px] uppercase tracking-[0.14em] text-ink-300 line-clamp-2">
+          {libro.autor}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function BookCard({
   libro,
@@ -68,7 +98,7 @@ export default function BookCard({
     }
   }
 
-  const showMenu = Boolean(auth);
+  const puedeGestionar = puedeEditarLibros(auth?.role) && Boolean(onEditClick || onDeleteClick);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -77,107 +107,168 @@ export default function BookCard({
         setMenuOpen(false);
       }
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [menuOpen]);
 
+  const categorias = libro.categorias.map((c) => c.nombre).join(" · ");
+
   return (
-    <div className="relative">
-      <Link
-        to={`/libros/${libro.id}`}
-        className="block bg-zinc-800 border border-zinc-700 rounded-lg overflow-hidden hover:border-zinc-500 transition-colors"
-      >
-        {coverSrc ? (
-          <div className="w-full aspect-[2/3] bg-zinc-900 flex items-center justify-center overflow-hidden">
-            <img
-              src={coverSrc}
-              alt={libro.titulo}
-              className="w-full h-full object-contain"
-              loading="lazy"
-              onError={() => {
-                if (coverSrc !== fallbackCover && fallbackCover) {
-                  setCoverSrc(fallbackCover);
-                  return;
-                }
-                setCoverSrc(null);
-              }}
-            />
-          </div>
-        ) : (
-          <div className="w-full aspect-[2/3] bg-zinc-800 flex items-center justify-center">
-            <span className="text-zinc-600 text-sm">Sin portada</span>
-          </div>
-        )}
-        <div className="p-4">
-          <p className="text-xs text-violet-500 mb-1">{libro.categorias.map((c) => c.nombre).join(" · ")}</p>
-          <div className="flex items-start mb-1">
-            <h3 className="text-zinc-100 font-medium leading-snug">{libro.titulo}</h3>
-          </div>
-          <p className="text-zinc-400 text-sm">{libro.autor}</p>
-          {libro.descripcion && (
-            <p className="text-zinc-500 text-sm mt-2 line-clamp-2">{libro.descripcion}</p>
+    <article className="group relative">
+      <Link to={`/libros/${libro.id}`} className="block rounded-lg">
+        {/* La portada es el objeto: sin borde ni caja alrededor, sombra cálida
+            y un lomo sutil a la izquierda que le da volumen de libro real. */}
+        <div
+          className="relative aspect-[2/3] overflow-hidden rounded-lg bg-ink-850 shadow-card
+                     transition-all duration-300 ease-out
+                     group-hover:-translate-y-1.5 group-hover:shadow-lift"
+        >
+          {coverSrc ? (
+            <>
+              {/* Copia difuminada de la propia portada como relleno: la imagen
+                  se ve entera, sin recortar el título ni el autor. */}
+              <img
+                src={coverSrc}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full scale-125 object-cover opacity-45 blur-xl"
+                loading="lazy"
+              />
+              <img
+                src={coverSrc}
+                alt={`Portada de ${libro.titulo}`}
+                className="relative h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+                loading="lazy"
+                onError={() => {
+                  if (coverSrc !== fallbackCover && fallbackCover) {
+                    setCoverSrc(fallbackCover);
+                    return;
+                  }
+                  setCoverSrc(null);
+                }}
+              />
+            </>
+          ) : (
+            <FallbackCover libro={libro} />
           )}
+
+          {/* Lomo + viñeteado inferior para despegar los controles del arte. */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-ink-950/55 to-transparent"
+          />
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-ink-50/[0.06]"
+          />
         </div>
       </Link>
 
-      {showMenu && (
-        <div ref={menuRef} className="absolute top-2 right-2">
+      {/* Controles sobre la portada: aparecen al hover y siempre en táctil. */}
+      <div className="absolute right-2 top-2 flex items-center gap-1.5">
+        {auth && (
           <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setMenuOpen((v) => !v);
-            }}
-            className="w-8 h-8 flex items-center justify-center rounded-lg bg-zinc-900/80 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 text-lg leading-none backdrop-blur-sm transition-colors"
-            title="Opciones"
+            onClick={handleFavorito}
+            aria-pressed={esFavorito}
+            aria-label={esFavorito ? `Quitar ${libro.titulo} de favoritos` : `Agregar ${libro.titulo} a favoritos`}
+            title={esFavorito ? "Quitar de favoritos" : "Agregar a favoritos"}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border backdrop-blur-md
+                        transition-all duration-200 ease-out active:scale-95
+                        focus-visible:opacity-100
+                        ${
+                          esFavorito
+                            ? "border-brass-500/40 bg-brass-500/20 text-brass-300 opacity-100"
+                            : "border-ink-50/10 bg-ink-950/70 text-ink-200 hover:bg-ink-950/90 hover:text-brass-300 lg:opacity-0 lg:group-hover:opacity-100"
+                        }`}
           >
-            ⋮
+            <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
+              <path
+                d="M4 2.5h8a.5.5 0 01.5.5v10.2a.3.3 0 01-.47.25L8 11.2l-4.03 2.25a.3.3 0 01-.47-.25V3a.5.5 0 01.5-.5z"
+                fill={esFavorito ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="1.3"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
+        )}
 
-          {menuOpen && (
-            <div className="absolute right-0 top-9 w-44 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl overflow-hidden z-20">
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setMenuOpen(false);
-                  void handleFavorito();
-                }}
-                className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 transition-colors"
+        {puedeGestionar && (
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={`Opciones de ${libro.titulo}`}
+              aria-expanded={menuOpen}
+              aria-haspopup="menu"
+              className={`flex h-8 w-8 items-center justify-center rounded-lg border border-ink-50/10
+                          bg-ink-950/70 text-ink-200 backdrop-blur-md transition-all duration-200 ease-out
+                          hover:bg-ink-950/90 hover:text-ink-50 active:scale-95
+                          focus-visible:opacity-100 lg:group-hover:opacity-100
+                          ${menuOpen ? "opacity-100" : "lg:opacity-0"}`}
+            >
+              <svg viewBox="0 0 16 16" className="h-4 w-4" aria-hidden="true">
+                <circle cx="8" cy="3.5" r="1.3" fill="currentColor" />
+                <circle cx="8" cy="8" r="1.3" fill="currentColor" />
+                <circle cx="8" cy="12.5" r="1.3" fill="currentColor" />
+              </svg>
+            </button>
+
+            {menuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-10 z-dropdown w-40 animate-scale-in overflow-hidden
+                           rounded-xl border border-ink-700/70 bg-ink-850 shadow-panel
+                           ring-1 ring-inset ring-ink-50/[0.04]"
               >
-                {esFavorito ? "Quitar de favoritos" : "Agregar a favoritos"}
-              </button>
-              {auth && canManageBooks(auth.role) && (onEditClick || onDeleteClick) && (
-                <>
-                  <div className="border-t border-zinc-700" />
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setMenuOpen(false);
-                      onEditClick?.(libro);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-zinc-100 transition-colors"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setMenuOpen(false);
-                      onDeleteClick?.(libro.id);
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-700 hover:text-red-300 transition-colors"
-                  >
-                    Eliminar
-                  </button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onEditClick?.(libro);
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-ink-200 transition-colors duration-150 hover:bg-ink-800 hover:text-ink-50"
+                >
+                  Editar
+                </button>
+                <div className="h-px bg-ink-700/70" />
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onDeleteClick?.(libro.id);
+                  }}
+                  className="w-full px-4 py-2.5 text-left text-sm text-ember-400 transition-colors duration-150 hover:bg-ink-800 hover:brightness-110"
+                >
+                  Eliminar
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Metadatos fuera de la portada: la ficha respira y las alturas varían
+          libremente sin romper la alineación de la grilla. */}
+      <div className="mt-3">
+        {categorias && (
+          <p className="mb-1 truncate text-[11px] uppercase tracking-[0.14em] text-brass-500">
+            {categorias}
+          </p>
+        )}
+        <h3 className="font-display text-[15px] font-semibold leading-snug tracking-tight text-ink-50">
+          <Link to={`/libros/${libro.id}`} className="rounded transition-colors hover:text-brass-300">
+            {libro.titulo}
+          </Link>
+        </h3>
+        <p className="mt-0.5 truncate text-sm text-ink-400">{libro.autor}</p>
+      </div>
+    </article>
   );
 }

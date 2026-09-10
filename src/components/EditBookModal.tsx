@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getCategorias } from "../api/categorias";
+import Modal from "./Modal";
 import { updateLibro } from "../api/libros";
 import { uploadImage } from "../lib/cloudinary";
 import type { Categoria, Libro } from "../types";
@@ -101,40 +102,31 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
   const portadaMostrada = portadaPreview ?? libro.portada;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-
-      <div className="relative z-10 bg-zinc-900 border border-zinc-700 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-zinc-100">Editar libro</h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-200 text-xl leading-none">
-            ✕
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+    <Modal title="Editar libro" onClose={onClose} size="lg" dismissible={!loading}>
+      <form onSubmit={handleSubmit} className="space-y-6 px-6 py-5">
           {error && (
-            <p className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-3">
+            <p role="alert"
+          className="rounded-lg border border-ember-500/25 bg-ember-500/10 px-3.5 py-2.5 text-sm text-ember-400">
               {error}
             </p>
           )}
 
           {/* Portada */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">Portada</label>
+            <label className="label">Portada</label>
             <div className="flex items-start gap-4">
               {portadaMostrada ? (
                 <div className="relative flex-shrink-0">
                   <img
                     src={portadaMostrada}
                     alt="Vista previa"
-                    className="w-24 h-32 object-cover rounded-lg border border-zinc-600"
+                    className="h-32 w-24 rounded-lg object-cover shadow-card ring-1 ring-inset ring-ink-50/[0.08]"
                   />
                   {portadaFile && (
                     <button
                       type="button"
                       onClick={handleRemovePortada}
-                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-400 rounded-full text-white text-xs flex items-center justify-center"
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-ember-500 hover:bg-ember-400 rounded-full text-ink-950 text-xs flex items-center justify-center"
                     >
                       ✕
                     </button>
@@ -144,19 +136,19 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-24 h-32 border-2 border-dashed border-zinc-600 hover:border-violet-500 rounded-lg flex flex-col items-center justify-center gap-1 text-zinc-500 hover:text-violet-400 transition-colors text-xs"
+                  className="flex h-32 w-24 flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-ink-600 text-xs text-ink-400 transition-colors duration-200 hover:border-brass-500 hover:text-brass-400"
                 >
                   <span className="text-2xl">+</span>
                   <span>Subir imagen</span>
                 </button>
               )}
-              <div className="flex-1 text-xs text-zinc-500">
+              <div className="flex-1 text-xs text-ink-400">
                 <p>Formatos: JPG, PNG, WEBP</p>
                 <p>Tamaño máximo: 10 MB</p>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="mt-2 text-violet-400 hover:text-violet-300 underline"
+                  className="mt-2 rounded text-brass-400 underline decoration-brass-500/40 underline-offset-4 transition-colors duration-200 hover:text-brass-300"
                 >
                   {portadaMostrada ? "Cambiar portada" : "Seleccionar archivo"}
                 </button>
@@ -174,66 +166,66 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
           {/* Título y Autor */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">
-                Título <span className="text-red-400">*</span>
+              <label className="label">
+                Título <span className="text-ember-400">*</span>
               </label>
               <input
                 type="text"
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-violet-500"
+                className="field"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">
-                Autor <span className="text-red-400">*</span>
+              <label className="label">
+                Autor <span className="text-ember-400">*</span>
               </label>
               <input
                 type="text"
                 value={autor}
                 onChange={(e) => setAutor(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-violet-500"
+                className="field"
               />
             </div>
           </div>
 
           {/* Descripción */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-1">Descripción</label>
+            <label className="label">Descripción</label>
             <textarea
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               rows={3}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-violet-500 resize-none"
+              className="field resize-none"
             />
           </div>
 
           {/* Editorial y Año */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Editorial</label>
+              <label className="label">Editorial</label>
               <input
                 type="text"
                 value={editorial}
                 onChange={(e) => setEditorial(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-violet-500"
+                className="field"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-1">Año de publicación</label>
+              <label className="label">Año de publicación</label>
               <input
                 type="text"
                 value={anioPublicacion}
                 onChange={(e) => setAnioPublicacion(e.target.value)}
                 maxLength={4}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-violet-500"
+                className="field"
               />
             </div>
           </div>
 
           {/* Estado */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">Estado</label>
+            <label className="label">Estado</label>
             <div className="flex gap-3">
               {ESTADO_OPTIONS.map((opt) => (
                 <button
@@ -242,8 +234,8 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
                   onClick={() => setEstadoLibro(opt.value)}
                   className={`px-4 py-2 rounded-lg text-sm border transition-colors ${
                     estadoLibro === opt.value
-                      ? "border-violet-500 bg-violet-500/10 text-violet-400"
-                      : "border-zinc-700 text-zinc-400 hover:border-zinc-500"
+                      ? "border-brass-500 bg-brass-500/10 text-brass-400"
+                      : "border-ink-700 text-ink-300 hover:border-ink-400"
                   }`}
                 >
                   {opt.label}
@@ -254,13 +246,13 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
 
           {/* Categorías */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Categorías <span className="text-red-400">*</span>
+            <label className="label">
+              Categorías <span className="text-ember-400">*</span>
             </label>
             {loadingCats ? (
-              <p className="text-sm text-zinc-500">Cargando categorías...</p>
+              <p className="text-sm text-ink-400">Cargando categorías...</p>
             ) : (
-              <div className="border border-zinc-700 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+              <div className="border border-ink-700 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
                 {categorias.map((cat, idx) => {
                   const seleccionada = categoriaIds.includes(cat.id);
                   return (
@@ -275,25 +267,25 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
                         )
                       }
                       className={`w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 transition-colors ${
-                        idx !== categorias.length - 1 ? "border-b border-zinc-800" : ""
+                        idx !== categorias.length - 1 ? "border-b border-ink-800" : ""
                       } ${
                         seleccionada
-                          ? "bg-violet-500/10 text-violet-400"
-                          : "text-zinc-300 hover:bg-zinc-800"
+                          ? "bg-brass-500/12 text-brass-300"
+                          : "text-ink-200 hover:bg-ink-800"
                       }`}
                     >
                       <span
                         className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
-                          seleccionada ? "border-violet-500 bg-violet-500" : "border-zinc-600"
+                          seleccionada ? "border-brass-500 bg-brass-500" : "border-ink-600"
                         }`}
                       >
                         {seleccionada && (
-                          <span className="text-white text-[10px] leading-none">✓</span>
+                          <span className="text-[10px] font-bold leading-none text-ink-950">✓</span>
                         )}
                       </span>
                       <span>{cat.nombre}</span>
                       {cat.descripcion && (
-                        <span className="text-zinc-500 text-xs ml-auto truncate max-w-[120px]">
+                        <span className="text-ink-400 text-xs ml-auto truncate max-w-[120px]">
                           {cat.descripcion}
                         </span>
                       )}
@@ -310,20 +302,19 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="px-4 py-2 text-sm text-zinc-400 hover:text-zinc-200 disabled:opacity-50"
+              className="btn-ghost"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-5 py-2 text-sm bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              className="btn-primary px-5"
             >
               {loading ? "Guardando..." : "Guardar cambios"}
             </button>
           </div>
-        </form>
-      </div>
-    </div>
+      </form>
+    </Modal>
   );
 }

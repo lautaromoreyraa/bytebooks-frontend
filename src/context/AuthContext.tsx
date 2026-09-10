@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { AuthResponse } from "../types";
+import { invalidarCatalogo } from "../lib/cacheDeCatalogo";
 
 interface AuthState {
   userId: string;
@@ -36,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     function handleSessionExpired() {
       setSessionExpired(true);
+      invalidarCatalogo();
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       localStorage.removeItem("email");
@@ -47,6 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   function login(response: AuthResponse) {
+    // El catalogo cacheado es de la sesion anterior, y la API devuelve libros
+    // distintos segun el rol: hay que descartarlo en los dos sentidos.
+    invalidarCatalogo();
+
     const role = response.role ?? "ROLE_USER";
     const state: AuthState = {
       userId: response.userId,
@@ -62,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
+    invalidarCatalogo();
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("email");
