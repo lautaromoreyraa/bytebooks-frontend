@@ -78,6 +78,7 @@ Thumbs.db
 # Notas de trabajo (no se versionan)
 # ===========================
 REVISION.md
+handoff.md
 CLAUDE.md
 AGENTS.md
 MEMORY.md
