@@ -410,13 +410,14 @@ export default function BookDetailPage() {
             </div>
           )}
 
-          {(libro.editorial || libro.anioPublicacion || libro.isbn) && (
-            <dl className="mt-7 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {/* El ISBN no se muestra: para quien lee no dice nada. Sigue llegando
+              en la respuesta y se usa para buscar la portada en Open Library. */}
+          {(libro.editorial || libro.anioPublicacion) && (
+            <dl className="mt-7 flex flex-wrap gap-2.5">
               {libro.editorial && <MetaChip label="Editorial" value={libro.editorial} />}
               {libro.anioPublicacion && (
                 <MetaChip label="Publicación" value={libro.anioPublicacion} />
               )}
-              {libro.isbn && <MetaChip label="ISBN" value={libro.isbn} />}
             </dl>
           )}
 
