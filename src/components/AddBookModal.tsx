@@ -3,11 +3,16 @@ import Modal from "./Modal";
 import { getCategorias } from "../api/categorias";
 import { createLibro, previsualizarGoogleBooks, confirmarImportacion } from "../api/libros";
 import { uploadImage } from "../lib/cloudinary";
+import { validarLibro, LIMITE_SINOPSIS } from "../lib/validacionDeLibro";
 import type { Categoria, GoogleBookCandidate, Libro } from "../types";
 
 interface Props {
   onClose: () => void;
   onCreated: (libro: Libro) => void;
+  /** Se llama cuando la importación guarda al menos un libro. La carga manual
+   *  devuelve el libro y se agrega a la grilla; una importación guarda varios,
+   *  así que lo único razonable es que el catálogo se vuelva a pedir. */
+  onImported: () => void;
 }
 
 const ESTADO_OPTIONS: { value: "DISPONIBLE" | "OCULTO"; label: string }[] = [
@@ -65,8 +70,15 @@ function ManualTab({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!titulo.trim() || !autor.trim() || categoriaIds.length === 0) {
-      setError("Título, autor y al menos una categoría son obligatorios.");
+    const problema = validarLibro({
+      titulo,
+      autor,
+      categoriaIds,
+      descripcion,
+      anioPublicacion,
+    });
+    if (problema) {
+      setError(problema);
       return;
     }
 
@@ -195,8 +207,14 @@ function ManualTab({
           onChange={(e) => setDescripcion(e.target.value)}
           placeholder="Sinopsis del libro..."
           rows={3}
+          maxLength={LIMITE_SINOPSIS}
           className="field resize-none"
         />
+        {descripcion.length > LIMITE_SINOPSIS - 100 && (
+          <p className="num mt-1.5 text-right text-xs text-ink-500">
+            {descripcion.length}/{LIMITE_SINOPSIS}
+          </p>
+        )}
       </div>
 
       {/* Editorial y Año */}
@@ -213,10 +231,13 @@ function ManualTab({
         </div>
         <div>
           <label className="label">Año de publicación</label>
+          {/* Solo dígitos: la API pide cuatro exactos y el 400 llegaba después
+              de haber subido la portada. */}
           <input
             type="text"
+            inputMode="numeric"
             value={anioPublicacion}
-            onChange={(e) => setAnioPublicacion(e.target.value)}
+            onChange={(e) => setAnioPublicacion(e.target.value.replace(/\D/g, ""))}
             placeholder="Ej: 1954"
             maxLength={4}
             className="field"
@@ -317,10 +338,12 @@ function GoogleBooksTab({
   categorias,
   loadingCats,
   onClose,
+  onImported,
 }: {
   categorias: Categoria[];
   loadingCats: boolean;
   onClose: () => void;
+  onImported: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [buscando, setBuscando] = useState(false);
@@ -382,6 +405,13 @@ function GoogleBooksTab({
       setCandidatos(null);
       setSeleccionados(new Set());
       setQuery("");
+
+      // Los libros quedaban guardados y la interfaz decía lo contrario: el
+      // catálogo no se tocaba, así que el admin cerraba el modal, no veía nada
+      // nuevo, salía y volvía, y seguía sin ver nada.
+      if (res.guardados > 0) {
+        onImported();
+      }
     } catch (err) {
       setErrorImportacion(err instanceof Error ? err.message : "Error al importar los libros.");
     } finally {
@@ -418,12 +448,20 @@ function GoogleBooksTab({
 
       {/* Resultado exitoso */}
       {resultado && (
-        <div className="text-sm bg-sage-500/10 border border-sage-500/20 rounded-lg px-4 py-3 text-sage-400">
-          Se importaron {resultado.guardados} libro{resultado.guardados !== 1 ? "s" : ""} correctamente.
-          {resultado.errores > 0 && (
-            <span className="text-brass-400"> ({resultado.errores} con error)</span>
-          )}
-        </div>
+        <>
+          <div className="text-sm bg-sage-500/10 border border-sage-500/20 rounded-lg px-4 py-3 text-sage-400">
+            Se importaron {resultado.guardados} libro{resultado.guardados !== 1 ? "s" : ""} correctamente
+            {resultado.guardados > 0 && " y ya están en el catálogo"}.
+            {resultado.errores > 0 && (
+              <span className="text-brass-400"> ({resultado.errores} con error)</span>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <button type="button" onClick={onClose} className="btn-primary px-5">
+              Listo
+            </button>
+          </div>
+        </>
       )}
 
       {/* Lista de candidatos */}
@@ -567,7 +605,7 @@ function GoogleBooksTab({
 
 // ─── Modal wrapper ────────────────────────────────────────────────────────────
 
-export default function AddBookModal({ onClose, onCreated }: Props) {
+export default function AddBookModal({ onClose, onCreated, onImported }: Props) {
   const [tab, setTab] = useState<"manual" | "google">("manual");
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loadingCats, setLoadingCats] = useState(true);
@@ -609,7 +647,12 @@ export default function AddBookModal({ onClose, onCreated }: Props) {
           onClose={onClose}
         />
       ) : (
-        <GoogleBooksTab categorias={categorias} loadingCats={loadingCats} onClose={onClose} />
+        <GoogleBooksTab
+          categorias={categorias}
+          loadingCats={loadingCats}
+          onClose={onClose}
+          onImported={onImported}
+        />
       )}
     </Modal>
   );

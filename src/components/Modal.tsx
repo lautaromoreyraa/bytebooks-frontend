@@ -34,15 +34,36 @@ export default function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
+  /*
+   * `onClose` y `dismissible` se leen de refs para que el efecto de abajo corra
+   * una sola vez, al montar.
+   *
+   * Cuando estaban en las dependencias, cualquier cambio los volvía a armar: la
+   * limpieza devolvía el foco al elemento anterior —a esa altura desmontado, o
+   * sea al body— y el efecto nuevo no encontraba dónde ponerlo, porque durante
+   * una operación en curso los dos botones del diálogo están `disabled` y el
+   * selector los excluye. Resultado: mientras se guardaba, el Tab recorría la
+   * página de atrás. `ConfirmDialog` cambia `dismissible` en cada confirmación y
+   * casi todos los llamadores pasan un `onClose` en línea, que es una función
+   * distinta en cada render.
+   */
+  const onCloseRef = useRef(onClose);
+  const dismissibleRef = useRef(dismissible);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    dismissibleRef.current = dismissible;
+  });
+
   // Escape para cerrar y Tab confinado al panel: sin esto el foco del teclado
   // se escapa al contenido de atrás mientras el modal tapa la pantalla.
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && dismissible) {
+      if (e.key === "Escape" && dismissibleRef.current) {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -77,7 +98,7 @@ export default function Modal({
       document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus?.();
     };
-  }, [onClose, dismissible]);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
