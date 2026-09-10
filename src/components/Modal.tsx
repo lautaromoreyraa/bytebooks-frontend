@@ -72,7 +72,16 @@ export default function Modal({
       const focusables = Array.from(
         panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)
       ).filter((el) => el.offsetParent !== null);
-      if (focusables.length === 0) return;
+
+      // Mientras hay una operación en curso los botones del diálogo están
+      // `disabled` y el selector los excluye: sin esta rama no queda nada
+      // adentro a donde ir y el Tab se escapa a la página de atrás, que es lo
+      // que el modal tapa. El panel se queda con el foco hasta que termine.
+      if (focusables.length === 0) {
+        e.preventDefault();
+        panelRef.current.focus();
+        return;
+      }
 
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
@@ -91,7 +100,8 @@ export default function Modal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    panelRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    const primero = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE);
+    (primero ?? panelRef.current)?.focus();
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
@@ -113,6 +123,9 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        // Para poder recibir el foco cuando no hay nada focusable adentro. En
+        // -1 no entra en el orden de tabulación: sólo se enfoca por código.
+        tabIndex={-1}
         className={`relative z-raised max-h-[90dvh] w-full ${SIZES[size]} animate-scale-in
                     overflow-y-auto overscroll-contain rounded-2xl border border-ink-700/70
                     bg-ink-900 shadow-panel ring-1 ring-inset ring-ink-50/[0.04]`}
