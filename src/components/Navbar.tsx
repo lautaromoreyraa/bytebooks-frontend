@@ -38,6 +38,9 @@ export default function Navbar() {
           className="group flex items-center gap-2.5 rounded-md py-1 pr-1"
           aria-label="ByteBooks — ir al inicio"
         >
+          {/* Misma marca que public/favicon.svg: si cambia una, cambiar la otra.
+              Va acá en línea, y no como <img>, porque las barras reaccionan al
+              hover con clases de Tailwind. */}
           <svg
             viewBox="0 0 32 32"
             className="h-7 w-7 flex-shrink-0"
