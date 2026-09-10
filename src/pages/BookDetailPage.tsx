@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { getLibro, deleteLibro } from "../api/libros";
-import { getResenas, createResena, deleteResena } from "../api/resenas";
+import {
+  getResenas,
+  getResumenDeResenas,
+  createResena,
+  deleteResena,
+} from "../api/resenas";
 import { addFavorito, removeFavorito, getFavoritos } from "../api/usuarios";
 import { useAuth } from "../context/AuthContext";
 import { puedeEditarLibros } from "../lib/permisos";
 import { getOpenLibraryCover } from "../lib/covers";
+import { invalidarCatalogo } from "../lib/cacheDeCatalogo";
 import StarRating from "../components/StarRating";
 import EditBookModal from "../components/EditBookModal";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -54,6 +60,7 @@ export default function BookDetailPage() {
   const [libro, setLibro] = useState<Libro | null>(null);
   const [resenas, setResenas] = useState<Resena[]>([]);
   const [totalResenas, setTotalResenas] = useState(0);
+  const [promedio, setPromedio] = useState<number | null>(null);
   const [esFavorito, setEsFavorito] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,8 +86,9 @@ export default function BookDetailPage() {
 
     setLoading(true);
     setError(null);
-    Promise.allSettled([getLibro(id), getResenas(id)])
-      .then(([libroResult, resenasResult]) => {
+    setPaginaResenas(0);
+    Promise.allSettled([getLibro(id), getResenas(id), getResumenDeResenas(id)])
+      .then(([libroResult, resenasResult, resumenResult]) => {
         if (libroResult.status === "fulfilled") {
           setLibro(libroResult.value);
         } else {
@@ -94,6 +102,15 @@ export default function BookDetailPage() {
         } else {
           setResenas([]);
           setTotalResenas(0);
+        }
+
+        // El promedio lo calcula la API sobre todas las resenas. Cuando falla se
+        // deja en null: mostrar el de la primera pagina seria un dato inventado.
+        if (resumenResult.status === "fulfilled") {
+          setPromedio(resumenResult.value.promedio);
+          setTotalResenas(resumenResult.value.total);
+        } else {
+          setPromedio(null);
         }
       })
       .finally(() => setLoading(false));
@@ -149,12 +166,28 @@ export default function BookDetailPage() {
     };
   }, [menuOpen]);
 
+  /** Una resena propia cambia el promedio de todas: lo recalcula la API. */
+  async function refrescarResumen(libroId: string) {
+    try {
+      const resumen = await getResumenDeResenas(libroId);
+      setPromedio(resumen.promedio);
+      setTotalResenas(resumen.total);
+    } catch {
+      // El contador local ya se ajusto; el promedio se corrige al recargar.
+    }
+  }
+
   async function handleConfirmDelete() {
     if (!id) return;
     setDeleting(true);
     try {
       await deleteLibro(id);
-      navigate(-1);
+      // El catalogo cacheado todavia lista el libro: sin esto, volver a la home
+      // lo muestra y clickearlo lleva a "No encontramos este libro".
+      invalidarCatalogo();
+      // navigate(-1) no hacia nada si la ficha se abrio por link directo, y
+      // dejaba al admin parado en el libro que acababa de borrar.
+      navigate("/", { replace: true });
     } catch {
       setDeleting(false);
     }
@@ -193,6 +226,7 @@ export default function BookDetailPage() {
       setTotalResenas((prev) => prev + 1);
       setComentario("");
       setPuntuacion(5);
+      void refrescarResumen(id);
     } catch (err) {
       setErrorResena(err instanceof Error ? err.message : "Error al enviar la reseña.");
     } finally {
@@ -229,6 +263,7 @@ export default function BookDetailPage() {
       setResenas((prev) => prev.filter((r) => r.id !== resenaAEliminar));
       setTotalResenas((prev) => Math.max(0, prev - 1));
       setResenaAEliminar(null);
+      if (id) void refrescarResumen(id);
     } catch {
       // el diálogo queda abierto si falla
     } finally {
@@ -268,10 +303,6 @@ export default function BookDetailPage() {
 
   const fallbackCover = libro.portada;
   const todasCargadas = resenas.length >= totalResenas;
-  const promedio =
-    resenas.length > 0 && todasCargadas
-      ? resenas.reduce((acc, r) => acc + r.puntuacion, 0) / resenas.length
-      : null;
 
   return (
     <div>
@@ -602,6 +633,8 @@ export default function BookDetailPage() {
           onClose={() => setShowEditModal(false)}
           onUpdated={(updated) => {
             setLibro(updated);
+            // El titulo editado quedaba viejo en la grilla cacheada de la home.
+            invalidarCatalogo();
             setShowEditModal(false);
           }}
         />
