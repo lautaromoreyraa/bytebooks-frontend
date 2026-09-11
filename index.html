@@ -20,7 +20,11 @@
       property="og:description"
       content="Catálogo de libros con fichas, portadas y reseñas de lectores."
     />
-    <meta property="og:image" content="/og-cover.png" />
+    <!-- Absoluta y no "/og-cover.png": X, Slack y LinkedIn descartan la imagen
+         si la URL es relativa, justo las plataformas para las que se agregó.
+         VITE_SITE_URL es el origen del despliegue, sin barra final. -->
+    <meta property="og:url" content="%VITE_SITE_URL%/" />
+    <meta property="og:image" content="%VITE_SITE_URL%/og-cover.png" />
     <meta name="twitter:card" content="summary_large_image" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />

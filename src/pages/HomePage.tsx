@@ -12,6 +12,7 @@ import { puedeCrearLibros } from "../lib/permisos";
 import { getFavoritos } from "../api/usuarios";
 import {
   guardarCatalogo,
+  invalidarCatalogo,
   leerCatalogo,
   leerCatalogoVencido,
 } from "../lib/cacheDeCatalogo";
@@ -48,6 +49,11 @@ export default function HomePage() {
     setLoading(true);
     setError(null);
 
+    // El finally corre igual cuando el catch programa el reintento, y apagar el
+    // skeleton ahi mostraba el estado vacio completo —con el boton de "Agregar
+    // el primer libro"— durante los 400 ms que tarda el segundo intento.
+    let reintentando = false;
+
     try {
       const [librosList, categoriasList] = await Promise.all([getLibros(), getCategorias()]);
 
@@ -58,6 +64,7 @@ export default function HomePage() {
       guardarCatalogo(librosList, categoriasList);
     } catch {
       if (retry && !cancelledRef.current) {
+        reintentando = true;
         window.setTimeout(() => {
           if (!cancelledRef.current) {
             void loadHomeData(false);
@@ -77,7 +84,7 @@ export default function HomePage() {
         setError("No se pudieron cargar los libros.");
       }
     } finally {
-      if (!cancelledRef.current) {
+      if (!cancelledRef.current && !reintentando) {
         setLoading(false);
       }
     }
@@ -356,6 +363,10 @@ export default function HomePage() {
               return next;
             });
             setShowAddModal(false);
+          }}
+          onImported={() => {
+            invalidarCatalogo();
+            void loadHomeData();
           }}
         />
       )}
