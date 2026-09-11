@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider } from "./context/AuthProvider";
 import Layout from "./components/Layout";
 import ScrollToTop from "./components/ScrollToTop";
+import RutaConSesion from "./components/RutaConSesion";
 import HomePage from "./pages/HomePage";
 import BookDetailPage from "./pages/BookDetailPage";
 import LoginPage from "./pages/LoginPage";
@@ -22,7 +23,14 @@ export default function App() {
             <Route path="/libros/:id" element={<BookDetailPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/favoritos" element={<FavoritosPage />} />
+            <Route
+              path="/favoritos"
+              element={
+                <RutaConSesion>
+                  <FavoritosPage />
+                </RutaConSesion>
+              }
+            />
             <Route path="/usuarios/:id" element={<UserProfilePage />} />
             <Route path="/legal" element={<LegalPage />} />
             <Route path="*" element={<NotFoundPage />} />

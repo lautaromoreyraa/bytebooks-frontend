@@ -11,32 +11,83 @@ import type { Libro, UsuarioPerfil } from "../types";
 export default function UserProfilePage() {
   const { id } = useParams<{ id: string }>();
   const { auth } = useAuth();
-  const [usuario, setUsuario] = useState<UsuarioPerfil | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  const [favoritos, setFavoritos] = useState<Libro[]>([]);
-  const [loadingFavoritos, setLoadingFavoritos] = useState(true);
-  const [errorFavoritos, setErrorFavoritos] = useState<string | null>(null);
   const [misFavoritoIds, setMisFavoritoIds] = useState<Set<string>>(new Set());
+
+  /*
+   * El perfil y los favoritos se guardan junto al id que los produjo, y el
+   * estado de carga se deduce comparando ese id con el de la URL.
+   *
+   * Antes eran banderas sueltas: ir de /usuarios/A a /usuarios/B dejaba el
+   * nombre, el avatar y los favoritos de A en pantalla hasta que respondía B, y
+   * si las respuestas se cruzaban el perfil quedaba mezclado. Con el id adentro
+   * del estado, una respuesta que ya no corresponde no tiene forma de mostrarse.
+   */
+  const [perfil, setPerfil] = useState<{
+    id: string;
+    usuario: UsuarioPerfil | null;
+    error: string | null;
+  } | null>(null);
+
+  const [guardados, setGuardados] = useState<{
+    id: string;
+    libros: Libro[];
+    error: string | null;
+  } | null>(null);
+
+  const perfilDeLaUrl = perfil?.id === id ? perfil : null;
+  const guardadosDeLaUrl = guardados?.id === id ? guardados : null;
+
+  const loading = perfilDeLaUrl === null;
+  const usuario = perfilDeLaUrl?.usuario ?? null;
+  const error = perfilDeLaUrl?.error ?? null;
+
+  const loadingFavoritos = guardadosDeLaUrl === null;
+  const favoritos = guardadosDeLaUrl?.libros ?? [];
+  const errorFavoritos = guardadosDeLaUrl?.error ?? null;
 
   const isOwner = auth?.userId === id;
 
   useEffect(() => {
     if (!id) return;
+    let cancelado = false;
+
     getUsuario(id)
-      .then(setUsuario)
-      .catch(() => setError("No se pudo cargar el perfil."))
-      .finally(() => setLoading(false));
+      .then((datos) => {
+        if (!cancelado) setPerfil({ id, usuario: datos, error: null });
+      })
+      .catch(() => {
+        if (!cancelado) {
+          setPerfil({ id, usuario: null, error: "No se pudo cargar el perfil." });
+        }
+      });
+
+    return () => {
+      cancelado = true;
+    };
   }, [id]);
 
   useEffect(() => {
     if (!id) return;
+    let cancelado = false;
+
     getFavoritosDeUsuario(id)
-      .then(setFavoritos)
-      .catch(() => setErrorFavoritos("No se pudieron cargar los favoritos."))
-      .finally(() => setLoadingFavoritos(false));
+      .then((libros) => {
+        if (!cancelado) setGuardados({ id, libros, error: null });
+      })
+      .catch(() => {
+        if (!cancelado) {
+          setGuardados({
+            id,
+            libros: [],
+            error: "No se pudieron cargar los favoritos.",
+          });
+        }
+      });
+
+    return () => {
+      cancelado = true;
+    };
   }, [id]);
 
   // Los favoritos de quien mira se piden una sola vez para toda la grilla. Si
@@ -190,7 +241,12 @@ export default function UserProfilePage() {
                   onFavoritoChange={
                     isOwner
                       ? (libroId, esFav) => {
-                          if (!esFav) setFavoritos((prev) => prev.filter((l) => l.id !== libroId));
+                          if (esFav) return;
+                          setGuardados((prev) =>
+                            prev === null
+                              ? prev
+                              : { ...prev, libros: prev.libros.filter((l) => l.id !== libroId) }
+                          );
                         }
                       : undefined
                   }
@@ -206,7 +262,7 @@ export default function UserProfilePage() {
           usuario={usuario}
           onClose={() => setShowEditModal(false)}
           onUpdated={(updated) => {
-            setUsuario(updated);
+            setPerfil((prev) => (prev === null ? prev : { ...prev, usuario: updated }));
             setShowEditModal(false);
           }}
         />

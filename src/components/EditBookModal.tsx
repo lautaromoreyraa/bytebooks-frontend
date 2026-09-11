@@ -3,6 +3,7 @@ import { getCategorias } from "../api/categorias";
 import Modal from "./Modal";
 import { updateLibro } from "../api/libros";
 import { uploadImage } from "../lib/cloudinary";
+import { validarLibro, LIMITE_SINOPSIS } from "../lib/validacionDeLibro";
 import type { Categoria, Libro } from "../types";
 
 interface Props {
@@ -66,8 +67,15 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!titulo.trim() || !autor.trim() || categoriaIds.length === 0) {
-      setError("Título, autor y al menos una categoría son obligatorios.");
+    const problema = validarLibro({
+      titulo,
+      autor,
+      categoriaIds,
+      descripcion,
+      anioPublicacion,
+    });
+    if (problema) {
+      setError(problema);
       return;
     }
 
@@ -196,8 +204,14 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               rows={3}
+              maxLength={LIMITE_SINOPSIS}
               className="field resize-none"
             />
+            {descripcion.length > LIMITE_SINOPSIS - 100 && (
+              <p className="num mt-1.5 text-right text-xs text-ink-500">
+                {descripcion.length}/{LIMITE_SINOPSIS}
+              </p>
+            )}
           </div>
 
           {/* Editorial y Año */}
@@ -213,10 +227,13 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             </div>
             <div>
               <label className="label">Año de publicación</label>
+              {/* Solo dígitos: la API pide cuatro exactos y el 400 llegaba
+                  después de haber subido la portada. */}
               <input
                 type="text"
+                inputMode="numeric"
                 value={anioPublicacion}
-                onChange={(e) => setAnioPublicacion(e.target.value)}
+                onChange={(e) => setAnioPublicacion(e.target.value.replace(/\D/g, ""))}
                 maxLength={4}
                 className="field"
               />

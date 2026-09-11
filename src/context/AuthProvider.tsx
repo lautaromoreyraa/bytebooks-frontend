@@ -1,23 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { AuthResponse } from "../types";
 import { invalidarCatalogo } from "../lib/cacheDeCatalogo";
-
-interface AuthState {
-  userId: string;
-  email: string;
-  token: string;
-  role: string;
-}
-
-interface AuthContextValue {
-  auth: AuthState | null;
-  sessionExpired: boolean;
-  dismissSessionExpired: () => void;
-  login: (response: AuthResponse) => void;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+import { AuthContext, type AuthState } from "./AuthContext";
 
 function loadAuthFromStorage(): AuthState | null {
   const token = localStorage.getItem("token");
@@ -85,10 +69,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth(): AuthContextValue {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
 }

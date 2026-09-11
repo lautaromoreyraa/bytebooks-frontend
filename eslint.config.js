@@ -20,4 +20,13 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Los tests no pasan por el refresco en caliente de Vite, asi que la regla
+    // que exige un solo tipo de export por archivo no aplica: los helpers de
+    // render exportan un componente de utilidad al lado de sus funciones.
+    files: ['src/test/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

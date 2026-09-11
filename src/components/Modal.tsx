@@ -34,15 +34,36 @@ export default function Modal({
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
 
+  /*
+   * `onClose` y `dismissible` se leen de refs para que el efecto de abajo corra
+   * una sola vez, al montar.
+   *
+   * Cuando estaban en las dependencias, cualquier cambio los volvía a armar: la
+   * limpieza devolvía el foco al elemento anterior —a esa altura desmontado, o
+   * sea al body— y el efecto nuevo no encontraba dónde ponerlo, porque durante
+   * una operación en curso los dos botones del diálogo están `disabled` y el
+   * selector los excluye. Resultado: mientras se guardaba, el Tab recorría la
+   * página de atrás. `ConfirmDialog` cambia `dismissible` en cada confirmación y
+   * casi todos los llamadores pasan un `onClose` en línea, que es una función
+   * distinta en cada render.
+   */
+  const onCloseRef = useRef(onClose);
+  const dismissibleRef = useRef(dismissible);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+    dismissibleRef.current = dismissible;
+  });
+
   // Escape para cerrar y Tab confinado al panel: sin esto el foco del teclado
   // se escapa al contenido de atrás mientras el modal tapa la pantalla.
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && dismissible) {
+      if (e.key === "Escape" && dismissibleRef.current) {
         e.stopPropagation();
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -51,7 +72,16 @@ export default function Modal({
       const focusables = Array.from(
         panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)
       ).filter((el) => el.offsetParent !== null);
-      if (focusables.length === 0) return;
+
+      // Mientras hay una operación en curso los botones del diálogo están
+      // `disabled` y el selector los excluye: sin esta rama no queda nada
+      // adentro a donde ir y el Tab se escapa a la página de atrás, que es lo
+      // que el modal tapa. El panel se queda con el foco hasta que termine.
+      if (focusables.length === 0) {
+        e.preventDefault();
+        panelRef.current.focus();
+        return;
+      }
 
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
@@ -70,14 +100,15 @@ export default function Modal({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
-    panelRef.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+    const primero = panelRef.current?.querySelector<HTMLElement>(FOCUSABLE);
+    (primero ?? panelRef.current)?.focus();
 
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus?.();
     };
-  }, [onClose, dismissible]);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-modal flex items-center justify-center p-4">
@@ -92,6 +123,9 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        // Para poder recibir el foco cuando no hay nada focusable adentro. En
+        // -1 no entra en el orden de tabulación: sólo se enfoca por código.
+        tabIndex={-1}
         className={`relative z-raised max-h-[90dvh] w-full ${SIZES[size]} animate-scale-in
                     overflow-y-auto overscroll-contain rounded-2xl border border-ink-700/70
                     bg-ink-900 shadow-panel ring-1 ring-inset ring-ink-50/[0.04]`}
