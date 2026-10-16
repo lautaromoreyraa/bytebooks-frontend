@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { api } from "../../api/client";
+import { guardarSesion } from "../../api/sesion";
 
 /**
  * El cliente HTTP es el punto por el que pasan todas las pantallas, y donde
@@ -21,7 +22,7 @@ describe("api", () => {
   });
 
   it("manda el token cuando hay sesion", async () => {
-    localStorage.setItem("token", "un-token");
+    guardarSesion({ token: "un-token", userId: "u", email: "e@ejemplo.test", role: "ROLE_USER" });
     vi.mocked(fetch).mockResolvedValue(responder(200, "[]"));
 
     await api.get("/libros");

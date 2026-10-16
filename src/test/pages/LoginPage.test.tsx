@@ -7,6 +7,7 @@ import { login } from "../../api/auth";
 import { guardarCatalogo, leerCatalogoVencido, invalidarCatalogo } from "../../lib/cacheDeCatalogo";
 import { renderConRutas } from "../fixture/render";
 import { unLibro, unaCategoria } from "../fixture/catalogo";
+import { sesionActual } from "../../api/sesion";
 
 vi.mock("../../api/auth");
 
@@ -62,8 +63,9 @@ describe("LoginPage", () => {
     await ingresar();
 
     await screen.findByText("El catálogo");
-    expect(localStorage.getItem("token")).toBe("un-token");
-    expect(localStorage.getItem("role")).toBe("ROLE_USER");
+    expect(sesionActual()).toMatchObject({ token: "un-token", role: "ROLE_USER" });
+    // La sesión no queda en el navegador: sólo en memoria.
+    expect(localStorage.getItem("token")).toBeNull();
   });
 
   it("iniciar sesion descarta el catalogo cacheado", async () => {

@@ -1,16 +1,18 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
+import { borrarSesion } from "../api/sesion";
 
 /**
  * Cada test arranca con el DOM limpio y sin nada guardado del anterior.
  *
- * El localStorage importa más de lo que parece: `AuthContext` lee la sesión de
- * ahí al montar, así que un test que inicia sesión dejaría autenticado al que
- * corra después.
+ * La sesión en memoria importa más de lo que parece: `AuthProvider` la lee al
+ * montar, así que un test que inicia sesión dejaría autenticado al que corra
+ * después.
  */
 afterEach(() => {
   cleanup();
+  borrarSesion();
   localStorage.clear();
   sessionStorage.clear();
 });
