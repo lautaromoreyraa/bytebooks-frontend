@@ -26,7 +26,7 @@ Web client for **ByteBooks**, a community book catalog: browse books by category
 | Language | TypeScript 5.9 (strict) |
 | Build | Vite 8 |
 | Styling | Tailwind CSS 3 |
-| Images | Cloudinary (profile photos and covers) |
+| Images | Cloudinary, with uploads signed by the API (profile photos and covers) |
 | Tests | Vitest, Testing Library, jsdom |
 | Hosting | Vercel, with Cloudflare Web Analytics (no cookies) |
 
@@ -74,7 +74,6 @@ npm run dev          # http://localhost:5173
 | Variable | Purpose |
 |---|---|
 | `VITE_API_URL` | API base URL (defaults to `http://localhost:8080`) |
-| `VITE_CLOUDINARY_CLOUD_NAME`, `VITE_CLOUDINARY_UPLOAD_PRESET` | Image uploads |
 
 `VITE_*` variables end up in the browser bundle, so they only hold public values, never credentials.
 
