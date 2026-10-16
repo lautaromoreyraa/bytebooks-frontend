@@ -13,7 +13,7 @@ Web client for **ByteBooks**, a community book catalog: browse books by category
 ## Features
 
 - **Catalog** with category filters, skeleton loading states and an in-memory cache, so going back from a book page doesn't reload everything.
-- **Book page** with paginated reviews, average rating and star input; authors edit or delete their own reviews.
+- **Book page** with paginated reviews, average rating and star input; authors (and moderators) can delete reviews.
 - **Accounts:** sign up, log in, edit profile and photo, manage favorites. Every user has a public profile with their saved books.
 - **Role-aware UI:** edit, delete and import actions only appear for roles the API will actually accept, so nobody fills out a form just to get a `403`.
 - **Google Books import** for admins: search, preview the candidates, pick categories and confirm.
@@ -45,7 +45,6 @@ flowchart LR
 - **Pages** own a route and orchestrate data loading; **components** are presentational and never call the API.
 - **`api/client.ts`** is the single place that talks HTTP: base URL, the session token and translating API errors into messages the UI can show.
 - **`lib/permisos.ts`** mirrors the backend authorization rules, and **`lib/cacheDeCatalogo.ts`** invalidates the catalog cache on every session change, because the catalog depends on who is looking (hidden books are only visible to staff).
-- The session token lives in memory inside `AuthContext`, not in `localStorage`.
 
 ## Project structure
 
