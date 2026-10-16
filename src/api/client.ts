@@ -1,8 +1,6 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+import { sesionActual } from "./sesion";
 
-function getToken(): string | null {
-  return localStorage.getItem("token");
-}
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 /**
  * Arma el mensaje que ve la persona a partir del cuerpo de error de la API.
@@ -38,7 +36,7 @@ async function mensajeDeError(response: Response): Promise<string> {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken();
+  const token = sesionActual()?.token ?? null;
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

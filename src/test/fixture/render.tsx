@@ -2,6 +2,7 @@ import { render } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { AuthProvider } from "../../context/AuthProvider";
 import type { ReactElement, ReactNode } from "react";
+import { guardarSesion } from "../../api/sesion";
 
 /**
  * Render con lo que la aplicación real pone alrededor de cada pantalla: el
@@ -43,15 +44,12 @@ export function renderConSesionYRouter(children: ReactNode) {
 }
 
 /**
- * Deja una sesión iniciada antes de montar. `AuthProvider` la lee del
- * localStorage al arrancar, así que tiene que escribirse antes del render.
+ * Deja una sesión iniciada antes de montar. `AuthProvider` la lee de la sesión
+ * en memoria al arrancar, así que tiene que guardarse antes del render.
  */
 export function iniciarSesion(
   role: "ROLE_USER" | "ROLE_MODERATOR" | "ROLE_ADMIN" = "ROLE_USER",
   userId = "usuario-1"
 ) {
-  localStorage.setItem("token", "un-token");
-  localStorage.setItem("userId", userId);
-  localStorage.setItem("email", "alguien@ejemplo.test");
-  localStorage.setItem("role", role);
+  guardarSesion({ token: "un-token", userId, email: "alguien@ejemplo.test", role });
 }

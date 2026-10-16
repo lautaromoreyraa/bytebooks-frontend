@@ -1,31 +1,19 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { AuthResponse } from "../types";
 import { invalidarCatalogo } from "../lib/cacheDeCatalogo";
+import { borrarSesion, guardarSesion, sesionActual } from "../api/sesion";
 import { AuthContext, type AuthState } from "./AuthContext";
 
-function loadAuthFromStorage(): AuthState | null {
-  const token = localStorage.getItem("token");
-  const userId = localStorage.getItem("userId");
-  const email = localStorage.getItem("email");
-  const role = localStorage.getItem("role") ?? "ROLE_USER";
-  if (token && userId && email) {
-    return { token, userId, email, role };
-  }
-  return null;
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [auth, setAuth] = useState<AuthState | null>(loadAuthFromStorage);
+  // La sesión vive en memoria (api/sesion.ts): al recargar la página se pierde.
+  const [auth, setAuth] = useState<AuthState | null>(sesionActual);
   const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     function handleSessionExpired() {
       setSessionExpired(true);
       invalidarCatalogo();
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("email");
-      localStorage.removeItem("role");
+      borrarSesion();
       setAuth(null);
     }
     window.addEventListener("session-expired", handleSessionExpired);
@@ -37,26 +25,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // distintos segun el rol: hay que descartarlo en los dos sentidos.
     invalidarCatalogo();
 
-    const role = response.role ?? "ROLE_USER";
     const state: AuthState = {
       userId: response.userId,
       email: response.email,
       token: response.accessToken,
-      role,
+      role: response.role ?? "ROLE_USER",
     };
-    localStorage.setItem("token", response.accessToken);
-    localStorage.setItem("userId", response.userId);
-    localStorage.setItem("email", response.email);
-    localStorage.setItem("role", role);
+    guardarSesion(state);
     setAuth(state);
   }
 
   function logout() {
     invalidarCatalogo();
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("email");
-    localStorage.removeItem("role");
+    borrarSesion();
     setAuth(null);
   }
 

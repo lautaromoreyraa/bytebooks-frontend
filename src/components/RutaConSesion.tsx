@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
  *
  * Sin esto, entrar a una ruta privada por URL disparaba el 401 de la API, que
  * `client.ts` traduce a "sesion expirada": a alguien que nunca inicio sesion le
- * aparecia ese modal y encima se le limpiaba el localStorage.
+ * aparecia ese modal y encima se le cerraba una sesion que nunca habia abierto.
  */
 export default function RutaConSesion({ children }: { children: ReactNode }) {
   const { auth } = useAuth();
