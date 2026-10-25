@@ -1,7 +1,9 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import Turnstile, { type TurnstileHandle } from "../components/Turnstile";
+import { desafioActivo } from "../lib/turnstile";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -23,6 +25,8 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<Campo, string>>>({});
   const [passwordTocada, setPasswordTocada] = useState(false);
+  const [desafio, setDesafio] = useState<string | null>(null);
+  const turnstile = useRef<TurnstileHandle>(null);
 
   const reglasCumplidas = useMemo(
     () => REGLAS_PASSWORD.map((r) => ({ ...r, ok: r.test(form.password) })),
@@ -53,6 +57,10 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
     if (!validar()) return;
+    if (desafioActivo && !desafio) {
+      setError("Esperá a que termine la verificación de seguridad, o completala si te la pide.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -61,11 +69,13 @@ export default function RegisterPage() {
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
         email: form.email.trim(),
-      });
+      }, desafio);
       saveAuth(response);
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos crear la cuenta.");
+      // El token ya se gastó en este intento: el siguiente necesita uno nuevo.
+      turnstile.current?.reiniciar();
     } finally {
       setLoading(false);
     }
@@ -184,6 +194,8 @@ export default function RegisterPage() {
           </ul>
           {renderError("password")}
         </div>
+
+        <Turnstile ref={turnstile} onToken={setDesafio} />
 
         {error && (
           <p

@@ -74,6 +74,7 @@ npm run dev          # http://localhost:5173
 | Variable | Purpose |
 |---|---|
 | `VITE_API_URL` | API base URL (defaults to `http://localhost:8080`) |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key for the sign-up challenge. Locally, Cloudflare's always-pass test key `1x00000000000000000000AA` |
 
 `VITE_*` variables end up in the browser bundle, so they only hold public values, never credentials.
 
