@@ -5,7 +5,6 @@ import { borrarSesion, guardarSesion, sesionActual } from "../api/sesion";
 import { AuthContext, type AuthState } from "./AuthContext";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // La sesión vive en memoria (api/sesion.ts): al recargar la página se pierde.
   const [auth, setAuth] = useState<AuthState | null>(sesionActual);
   const [sessionExpired, setSessionExpired] = useState(false);
 
@@ -21,8 +20,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   function login(response: AuthResponse) {
-    // El catalogo cacheado es de la sesion anterior, y la API devuelve libros
-    // distintos segun el rol: hay que descartarlo en los dos sentidos.
     invalidarCatalogo();
 
     const state: AuthState = {

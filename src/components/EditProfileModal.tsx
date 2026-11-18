@@ -79,7 +79,6 @@ export default function EditProfileModal({ usuario, onClose, onUpdated }: Props)
             </p>
           )}
 
-          {/* Foto de perfil */}
           <div>
             <p className="label">Foto de perfil</p>
             <div className="flex items-center gap-4">
@@ -125,7 +124,6 @@ export default function EditProfileModal({ usuario, onClose, onUpdated }: Props)
             />
           </div>
 
-          {/* Descripción */}
           <div>
             <label htmlFor="perfil-descripcion" className="label">
               Descripción
@@ -144,7 +142,6 @@ export default function EditProfileModal({ usuario, onClose, onUpdated }: Props)
             </p>
           </div>
 
-          {/* Botones */}
           <div className="flex justify-end gap-3 pt-1">
             <button
               type="button"

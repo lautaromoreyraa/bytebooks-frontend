@@ -21,7 +21,6 @@ function unPerfil(cambios: Partial<UsuarioPerfil> = {}): UsuarioPerfil {
   };
 }
 
-/** Una promesa que resuelve cuando el test lo decide. */
 function promesaControlada<T>() {
   let resolver!: (valor: T) => void;
   const promesa = new Promise<T>((cumplir) => {
@@ -59,9 +58,6 @@ describe("UserProfilePage", () => {
   });
 
   it("al cambiar de perfil no deja en pantalla el anterior", async () => {
-    // Hallazgo 12: el efecto no volvia a poner `loading` en true, asi que ir de
-    // /usuarios/A a /usuarios/B dejaba el nombre y el avatar de A hasta que
-    // respondia B.
     const beto = promesaControlada<UsuarioPerfil>();
     vi.mocked(getUsuario).mockImplementation((id: string) =>
       id === "usuario-a" ? Promise.resolve(unPerfil()) : beto.promesa
@@ -91,7 +87,6 @@ describe("UserProfilePage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Ir al perfil de Beto" }));
     await screen.findByRole("heading", { name: "Beto López" });
 
-    // La respuesta de A llega despues de haber cambiado de perfil.
     ana.resolver(unPerfil());
 
     await waitFor(() => {

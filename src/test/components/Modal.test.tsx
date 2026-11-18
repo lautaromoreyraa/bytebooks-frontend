@@ -61,15 +61,6 @@ describe("Modal", () => {
   });
 
   it("el foco sigue adentro mientras la operacion esta en curso", async () => {
-    /*
-     * Esta es la regresion del hallazgo 13. `ConfirmDialog` pasa
-     * `dismissible={!pending}`: mientras `dismissible` y `onClose` estuvieron en
-     * las dependencias del efecto, confirmar lo volvia a armar, la limpieza
-     * devolvia el foco al elemento anterior —ya desmontado, o sea al body— y el
-     * efecto nuevo no encontraba donde ponerlo, porque los dos botones del
-     * dialogo estan `disabled` y el selector los excluye. Resultado: durante el
-     * borrado, el Tab recorria la pagina de atras.
-     */
     function Contenedor() {
       const [pendiente, setPendiente] = useState(false);
       return (
@@ -92,8 +83,6 @@ describe("Modal", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Sí, eliminar" }));
 
-    // Los dos botones quedaron deshabilitados: el foco no puede irse a la
-    // pagina de atras.
     expect(screen.getByRole("button", { name: "Eliminando…" })).toBeDisabled();
 
     await userEvent.tab();

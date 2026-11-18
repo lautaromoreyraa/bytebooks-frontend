@@ -1,12 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { CLAVE_DEL_SITIO } from "../lib/turnstile";
 
-/**
- * Desafío de Cloudflare Turnstile para el registro.
- *
- * El widget entrega un token que la API verifica contra Cloudflare. Sin clave
- * de sitio configurada no se muestra nada, y la API decide.
- */
 const SCRIPT = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 
 interface ApiTurnstile {
@@ -34,8 +28,6 @@ function cargarScript(): Promise<ApiTurnstile> {
     script.onload = () =>
       window.turnstile ? resolve(window.turnstile) : reject(new Error("Turnstile no cargó"));
     script.onerror = () => {
-      // Sin esto, un bloqueador que corta el script dejaría la promesa
-      // rechazada para siempre y no habría forma de reintentar.
       cargando = null;
       reject(new Error("No se pudo cargar Turnstile"));
     };
@@ -45,19 +37,16 @@ function cargarScript(): Promise<ApiTurnstile> {
 }
 
 export interface TurnstileHandle {
-  /** El token es de un solo uso: después de un envío fallido hace falta otro. */
   reiniciar(): void;
 }
 
 interface Props {
-  /** Recibe el token cuando se resuelve el desafío, y null cuando vence o falla. */
   onToken: (token: string | null) => void;
 }
 
 const Turnstile = forwardRef<TurnstileHandle, Props>(function Turnstile({ onToken }, ref) {
   const contenedor = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
-  // En un ref para que un onToken nuevo en cada render no vuelva a montar el widget.
   const avisar = useRef(onToken);
   useEffect(() => {
     avisar.current = onToken;

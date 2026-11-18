@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { register } from "../../api/auth";
 
-/**
- * El token del desafío viaja en una cabecera y no en el cuerpo: la API lo
- * verifica en un filtro, antes de leer el formulario.
- */
 
 const datos = { nombre: "Camila", apellido: "Sosa", email: "c@ejemplo.test", password: "Local1234" };
 

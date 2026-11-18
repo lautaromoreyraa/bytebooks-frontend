@@ -2,13 +2,6 @@ import { sesionActual } from "./sesion";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
-/**
- * Arma el mensaje que ve la persona a partir del cuerpo de error de la API.
- *
- * Antes esto vivia dentro de un try cuyo propio catch atrapaba el throw, asi que
- * `body.message` no se usaba nunca y todas las pantallas mostraban el JSON
- * crudo. El parseo va aparte del lanzamiento justamente por eso.
- */
 async function mensajeDeError(response: Response): Promise<string> {
   const texto = await response.text();
   const respaldo = texto || `Error ${response.status}`;
@@ -17,7 +10,7 @@ async function mensajeDeError(response: Response): Promise<string> {
   try {
     body = JSON.parse(texto);
   } catch {
-    return respaldo; // no era JSON: se muestra tal cual vino
+    return respaldo;
   }
 
   if (typeof body !== "object" || body === null) return respaldo;
@@ -27,8 +20,6 @@ async function mensajeDeError(response: Response): Promise<string> {
     errors?: Record<string, string>;
   };
 
-  // La API devuelve el detalle por campo en `errors`. Sin esto el formulario
-  // decia "Validacion fallida" y nunca cual era el campo con problemas.
   const porCampo = errors ? Object.values(errors).filter(Boolean) : [];
   if (porCampo.length > 0) return porCampo.join(" ");
 

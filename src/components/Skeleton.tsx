@@ -1,7 +1,3 @@
-/**
- * Placeholders con la forma real del contenido que va a llegar. Reemplazan al
- * spinner genérico: la página no cambia de alto cuando terminan de cargar.
- */
 
 export function BookGridSkeleton({ count = 8 }: { count?: number }) {
   return (

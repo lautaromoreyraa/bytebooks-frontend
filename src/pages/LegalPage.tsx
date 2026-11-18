@@ -25,7 +25,6 @@ function Seccion({
 export default function LegalPage() {
   const { hash } = useLocation();
 
-  // El scroll a la sección tiene que ocurrir después de pintar el contenido.
   useEffect(() => {
     if (!hash) return;
     document.querySelector(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
