@@ -9,11 +9,6 @@ const VALIDO = {
   anioPublicacion: "1963",
 };
 
-/**
- * Estas reglas corren antes de subir la portada a Cloudinary. Si dejan pasar
- * algo que la API rechaza, la imagen ya se subió y el formulario se pierde con
- * un 400.
- */
 describe("validarLibro", () => {
   it("acepta un formulario completo", () => {
     expect(validarLibro(VALIDO)).toBeNull();

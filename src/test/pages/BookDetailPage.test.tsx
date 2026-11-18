@@ -47,12 +47,6 @@ describe("BookDetailPage", () => {
   });
 
   it("muestra la puntuacion aunque haya mas resenas que las de una pagina", async () => {
-    /*
-     * La regresion del hallazgo 5. El promedio se calculaba sobre las resenas
-     * cargadas y solo se mostraba con todas presentes, asi que un libro con mas
-     * de diez no mostraba ni estrellas ni promedio hasta clickear "Ver mas"
-     * hasta el final. Se cambio un dato incorrecto por ningun dato.
-     */
     const diez = Array.from({ length: 10 }, (_, i) =>
       unaResena({ id: `resena-${i}`, usuarioId: `usuario-${i}`, puntuacion: 5 })
     );
@@ -102,12 +96,6 @@ describe("BookDetailPage", () => {
   });
 
   it("borrar el libro deja el catalogo cacheado sin el y vuelve a la home", async () => {
-    /*
-     * Hallazgo 9. El borrado no tocaba el cache, asi que volver a la home
-     * mostraba el libro y clickearlo llevaba a "No encontramos este libro".
-     * Ademas navigate(-1) no hacia nada si la ficha se habia abierto por link
-     * directo: el admin quedaba parado en el libro que acababa de borrar.
-     */
     iniciarSesion("ROLE_ADMIN");
     guardarCatalogo([unLibro()], [unaCategoria()]);
     vi.mocked(deleteLibro).mockResolvedValue(undefined);

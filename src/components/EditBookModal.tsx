@@ -119,7 +119,6 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             </p>
           )}
 
-          {/* Portada */}
           <div>
             <label className="label">Portada</label>
             <div className="flex items-start gap-4">
@@ -171,7 +170,6 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             />
           </div>
 
-          {/* Título y Autor */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">
@@ -197,7 +195,6 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             </div>
           </div>
 
-          {/* Descripción */}
           <div>
             <label className="label">Descripción</label>
             <textarea
@@ -214,7 +211,6 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             )}
           </div>
 
-          {/* Editorial y Año */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Editorial</label>
@@ -227,8 +223,6 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             </div>
             <div>
               <label className="label">Año de publicación</label>
-              {/* Solo dígitos: la API pide cuatro exactos y el 400 llegaba
-                  después de haber subido la portada. */}
               <input
                 type="text"
                 inputMode="numeric"
@@ -240,7 +234,6 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             </div>
           </div>
 
-          {/* Estado */}
           <div>
             <label className="label">Estado</label>
             <div className="flex gap-3">
@@ -261,7 +254,6 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             </div>
           </div>
 
-          {/* Categorías */}
           <div>
             <label className="label">
               Categorías <span className="text-ember-400">*</span>
@@ -313,7 +305,6 @@ export default function EditBookModal({ libro, onClose, onUpdated }: Props) {
             )}
           </div>
 
-          {/* Botones */}
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"

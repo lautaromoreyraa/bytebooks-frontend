@@ -14,15 +14,6 @@ export default function UserProfilePage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [misFavoritoIds, setMisFavoritoIds] = useState<Set<string>>(new Set());
 
-  /*
-   * El perfil y los favoritos se guardan junto al id que los produjo, y el
-   * estado de carga se deduce comparando ese id con el de la URL.
-   *
-   * Antes eran banderas sueltas: ir de /usuarios/A a /usuarios/B dejaba el
-   * nombre, el avatar y los favoritos de A en pantalla hasta que respondía B, y
-   * si las respuestas se cruzaban el perfil quedaba mezclado. Con el id adentro
-   * del estado, una respuesta que ya no corresponde no tiene forma de mostrarse.
-   */
   const [perfil, setPerfil] = useState<{
     id: string;
     usuario: UsuarioPerfil | null;
@@ -90,9 +81,6 @@ export default function UserProfilePage() {
     };
   }, [id]);
 
-  // Los favoritos de quien mira se piden una sola vez para toda la grilla. Si
-  // cada tarjeta los pidiera por su cuenta, un perfil ajeno con muchos libros
-  // dispararía una petición por tarjeta y agotaría el límite de la API.
   useEffect(() => {
     if (!auth || isOwner) return;
 
@@ -131,7 +119,6 @@ export default function UserProfilePage() {
     <div>
       <header className="mb-12">
         <div className="flex flex-wrap items-start gap-5">
-          {/* Squircle en lugar del círculo de avatar de siempre. */}
           {usuario.fotoPerfil ? (
             <img
               src={usuario.fotoPerfil}
@@ -232,8 +219,6 @@ export default function UserProfilePage() {
                 className="animate-fade-up"
                 style={{ animationDelay: `${Math.min(i, 11) * 40}ms` }}
               >
-                {/* En el perfil ajeno el marcador refleja los favoritos de quien
-                    mira, no los del dueño del perfil: no se puede dar por hecho. */}
                 <BookCard
                   libro={libro}
                   initialEsFavorito={isOwner || (Boolean(auth) && misFavoritoIds.has(libro.id))}

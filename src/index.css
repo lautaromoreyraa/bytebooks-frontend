@@ -17,7 +17,6 @@
     font-feature-settings: "cv01", "ss01";
   }
 
-  /* Grano fijo: rompe la planitud del fondo sin cargar una imagen. */
   body::before {
     content: "";
     position: fixed;
@@ -28,8 +27,6 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* Foco visible en todo lo que se navega por teclado. Nunca se elimina el
-     outline sin reemplazarlo por este anillo. */
   :focus-visible {
     @apply outline-none ring-2 ring-brass-400/80 ring-offset-2 ring-offset-ink-950;
   }
@@ -48,7 +45,6 @@
     text-wrap: pretty;
   }
 
-  /* Barras de scroll acordes al fondo cálido. */
   * {
     scrollbar-width: thin;
     scrollbar-color: theme("colors.ink.700") transparent;
@@ -69,12 +65,10 @@
 }
 
 @layer components {
-  /* Contenedor único de página: una sola fuente de verdad para el ancho. */
   .container-page {
     @apply mx-auto w-full max-w-[78rem] px-5 sm:px-8;
   }
 
-  /* Ancho de lectura cómodo, ~65 caracteres. */
   .prose-measure {
     @apply max-w-[62ch] leading-relaxed;
   }
@@ -118,7 +112,6 @@
     @apply mb-1.5 block text-xs font-medium uppercase tracking-[0.12em] text-ink-400;
   }
 
-  /* Metadatos numéricos: mono con cifras tabulares. */
   .num {
     @apply font-mono tabular-nums;
   }

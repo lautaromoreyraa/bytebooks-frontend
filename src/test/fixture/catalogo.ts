@@ -1,12 +1,5 @@
 import type { Categoria, Libro, Resena } from "../../types";
 
-/**
- * Datos armados para los tests.
- *
- * Cada funcion devuelve algo valido y completo, y recibe los campos que ese
- * test necesita pisar. Asi lo unico escrito en el test es lo que el test
- * prueba, y el resto no distrae.
- */
 
 export function unaCategoria(cambios: Partial<Categoria> = {}): Categoria {
   return {
@@ -46,7 +39,6 @@ export function unaResena(cambios: Partial<Resena> = {}): Resena {
   };
 }
 
-/** Una pagina de la API con un solo elemento, o los que se le pasen. */
 export function unaPagina<T>(content: T[], total = content.length) {
   return {
     content,

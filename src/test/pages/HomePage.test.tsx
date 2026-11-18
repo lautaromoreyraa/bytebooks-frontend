@@ -26,7 +26,6 @@ const RUTAS = (
 
 describe("HomePage", () => {
   beforeEach(() => {
-    // El cache vive en un modulo: sin esto un test veria el catalogo del otro.
     invalidarCatalogo();
     vi.mocked(getCategorias).mockResolvedValue([unaCategoria()]);
     vi.mocked(getFavoritos).mockResolvedValue([]);
@@ -40,12 +39,6 @@ describe("HomePage", () => {
   });
 
   it("mientras reintenta no dice que la biblioteca esta vacia", async () => {
-    /*
-     * Hallazgo 14: el `return` del catch programaba el reintento pero el
-     * `finally` apagaba el skeleton igual, asi que durante 400 ms se veia el
-     * estado vacio entero —con el boton de "Agregar el primer libro"— antes de
-     * que volviera el skeleton.
-     */
     let resolverSegundo!: () => void;
     vi.mocked(getLibros)
       .mockRejectedValueOnce(new Error("se cayo la red"))
@@ -87,11 +80,6 @@ describe("HomePage", () => {
   });
 
   it("importar desde Google Books recarga el catalogo", async () => {
-    /*
-     * Hallazgo 6: la importacion decia "Se importaron N libros correctamente" y
-     * no tocaba el listado ni el cache. Los libros quedaban guardados y la
-     * pantalla afirmaba lo contrario.
-     */
     iniciarSesion("ROLE_ADMIN");
     vi.mocked(getLibros)
       .mockResolvedValueOnce([])
@@ -120,8 +108,6 @@ describe("HomePage", () => {
     await screen.findByText("La biblioteca está vacía");
 
     await userEvent.click(screen.getByRole("button", { name: /Agregar libro/ }));
-    // Todo lo del modal se busca adentro del modal: el buscador del catálogo
-    // que quedó atrás tiene el mismo placeholder.
     const modal = within(screen.getByRole("dialog"));
     await userEvent.click(modal.getByRole("button", { name: "Google Books" }));
     await userEvent.type(modal.getByPlaceholderText(/Buscar por título o autor/), "algo");
@@ -136,7 +122,6 @@ describe("HomePage", () => {
       expect(vi.mocked(getLibros)).toHaveBeenCalledTimes(2);
     });
 
-    // Y al cerrar, el libro esta en la grilla y no hay que salir y volver.
     await userEvent.click(modal.getByRole("button", { name: "Listo" }));
     expect(await screen.findByText("Importado de Google")).toBeInTheDocument();
   });
