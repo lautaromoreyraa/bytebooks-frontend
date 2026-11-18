@@ -27,8 +27,6 @@ export interface Resena {
   fechaResena: string;
 }
 
-/** Promedio y total de resenas de un libro, calculados por la API sobre la
- *  tabla entera. `promedio` es null cuando el libro no tiene ninguna. */
 export interface ResumenDeResenas {
   promedio: number | null;
   total: number;

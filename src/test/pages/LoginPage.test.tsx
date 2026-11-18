@@ -47,8 +47,6 @@ describe("LoginPage", () => {
   });
 
   it("un returnTo que apunta afuera del sitio se ignora", async () => {
-    // Hallazgo 15: `//otro-sitio` es la forma clasica del open redirect, porque
-    // el navegador lo lee como una URL absoluta con el protocolo actual.
     renderConRutas(RUTAS, { ruta: "/login?returnTo=//otro-sitio.test" });
 
     await ingresar();
@@ -64,13 +62,10 @@ describe("LoginPage", () => {
 
     await screen.findByText("El catálogo");
     expect(sesionActual()).toMatchObject({ token: "un-token", role: "ROLE_USER" });
-    // La sesión no queda en el navegador: sólo en memoria.
     expect(localStorage.getItem("token")).toBeNull();
   });
 
   it("iniciar sesion descarta el catalogo cacheado", async () => {
-    // La API devuelve libros distintos segun el rol: el catalogo que se vio sin
-    // sesion no sirve para la sesion nueva, ni al reves.
     guardarCatalogo([unLibro()], [unaCategoria()]);
     renderConRutas(RUTAS, { ruta: "/login" });
 

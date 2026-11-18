@@ -15,7 +15,6 @@ interface Props {
   skipFavoritosFetch?: boolean;
 }
 
-/** Tinte estable por título: dos libros sin portada nunca salen idénticos. */
 function hueFromTitle(titulo: string) {
   let hash = 0;
   for (let i = 0; i < titulo.length; i++) {
@@ -24,7 +23,6 @@ function hueFromTitle(titulo: string) {
   return hash;
 }
 
-/** Portada tipográfica para los libros que no tienen imagen. */
 function FallbackCover({ libro }: { libro: Libro }) {
   const hue = hueFromTitle(libro.titulo);
 
@@ -123,8 +121,6 @@ export default function BookCard({
   return (
     <article className="group relative">
       <Link to={`/libros/${libro.id}`} className="block rounded-lg">
-        {/* La portada es el objeto: sin borde ni caja alrededor, sombra cálida
-            y un lomo sutil a la izquierda que le da volumen de libro real. */}
         <div
           className="relative aspect-[2/3] overflow-hidden rounded-lg bg-ink-850 shadow-card
                      transition-all duration-300 ease-out
@@ -132,8 +128,6 @@ export default function BookCard({
         >
           {coverSrc ? (
             <>
-              {/* Copia difuminada de la propia portada como relleno: la imagen
-                  se ve entera, sin recortar el título ni el autor. */}
               <img
                 src={coverSrc}
                 alt=""
@@ -159,7 +153,6 @@ export default function BookCard({
             <FallbackCover libro={libro} />
           )}
 
-          {/* Lomo + viñeteado inferior para despegar los controles del arte. */}
           <span
             aria-hidden="true"
             className="pointer-events-none absolute inset-y-0 left-0 w-3 bg-gradient-to-r from-ink-950/55 to-transparent"
@@ -171,7 +164,6 @@ export default function BookCard({
         </div>
       </Link>
 
-      {/* Controles sobre la portada: aparecen al hover y siempre en táctil. */}
       <div className="absolute right-2 top-2 flex items-center gap-1.5">
         {auth && (
           <button
@@ -254,8 +246,6 @@ export default function BookCard({
         )}
       </div>
 
-      {/* Metadatos fuera de la portada: la ficha respira y las alturas varían
-          libremente sin romper la alineación de la grilla. */}
       <div className="mt-3">
         {categorias && (
           <p className="mb-1 truncate text-[11px] uppercase tracking-[0.14em] text-brass-500">

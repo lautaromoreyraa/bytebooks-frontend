@@ -1,6 +1,5 @@
 import { api } from "../api/client";
 
-/** Lo que devuelve `POST /imagenes/firma`. El secreto nunca llega al navegador. */
 interface FirmaDeSubida {
   firma: string;
   marcaDeTiempo: number;
@@ -9,14 +8,6 @@ interface FirmaDeSubida {
   carpeta: string;
 }
 
-/**
- * Sube una imagen directo a Cloudinary con una firma que emite la API.
- *
- * El archivo no pasa por el backend, pero tampoco hay un upload preset abierto:
- * con uno sin firma, cualquiera que leyera el bundle podía subir archivos a la
- * cuenta. La firma cubre sólo la carpeta y la hora, que son los únicos
- * parámetros que se mandan además del archivo.
- */
 export async function uploadImage(file: File): Promise<string> {
   const firma = await api.post<FirmaDeSubida>("/imagenes/firma", {});
 

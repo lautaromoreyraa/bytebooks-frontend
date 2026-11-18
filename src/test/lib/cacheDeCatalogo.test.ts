@@ -7,10 +7,6 @@ import {
 } from "../../lib/cacheDeCatalogo";
 import { unLibro, unaCategoria } from "../fixture/catalogo";
 
-/**
- * El cache es un modulo con estado global, asi que cada test lo vacia antes de
- * empezar; si no, el orden de los archivos cambiaria el resultado.
- */
 describe("cacheDeCatalogo", () => {
   beforeEach(() => {
     invalidarCatalogo();
@@ -53,8 +49,6 @@ describe("cacheDeCatalogo", () => {
   });
 
   it("invalidar borra hasta la copia vencida", () => {
-    // Es lo que se llama al iniciar y cerrar sesion: el catalogo depende del
-    // rol, y una copia vieja mostraria los libros ocultos a quien ya salio.
     guardarCatalogo([unLibro()], [unaCategoria()]);
 
     invalidarCatalogo();

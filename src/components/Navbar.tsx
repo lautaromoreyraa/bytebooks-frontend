@@ -20,15 +20,12 @@ export default function Navbar() {
     try {
       await apiLogout();
     } catch {
-      // ignore — token may already be expired
     }
     logout();
   }
 
   return (
     <header className="sticky top-0 z-sticky border-b border-ink-800/80 bg-ink-950/85 backdrop-blur-md">
-      {/* En pantallas angostas la navegación baja a su propia línea en lugar de
-          desbordar el ancho del documento. */}
       <div
         className="container-page flex flex-wrap items-center justify-between gap-x-4 gap-y-1
                    py-2.5 sm:h-16 sm:flex-nowrap sm:py-0"
@@ -38,9 +35,6 @@ export default function Navbar() {
           className="group flex items-center gap-2.5 rounded-md py-1 pr-1"
           aria-label="ByteBooks — ir al inicio"
         >
-          {/* Misma marca que public/favicon.svg: si cambia una, cambiar la otra.
-              Va acá en línea, y no como <img>, porque las barras reaccionan al
-              hover con clases de Tailwind. */}
           <svg
             viewBox="0 0 32 32"
             className="h-7 w-7 flex-shrink-0"

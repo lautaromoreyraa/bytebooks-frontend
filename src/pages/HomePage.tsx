@@ -49,9 +49,6 @@ export default function HomePage() {
     setLoading(true);
     setError(null);
 
-    // El finally corre igual cuando el catch programa el reintento, y apagar el
-    // skeleton ahi mostraba el estado vacio completo —con el boton de "Agregar
-    // el primer libro"— durante los 400 ms que tarda el segundo intento.
     let reintentando = false;
 
     try {
@@ -107,8 +104,6 @@ export default function HomePage() {
     return () => {
       cancelledRef.current = true;
     };
-    // `auth` entra en las dependencias porque el catalogo depende del rol: la
-    // API devuelve los libros ocultos a admin y moderador, y a nadie mas.
   }, [loadHomeData, auth]);
 
   useEffect(() => {
@@ -133,7 +128,6 @@ export default function HomePage() {
       });
       setLibroAEliminar(null);
     } catch {
-      // mantener el diálogo abierto si falla
     } finally {
       setDeleting(false);
     }
@@ -166,7 +160,6 @@ export default function HomePage() {
 
   return (
     <div>
-      {/* Cabecera editorial: el título es la pieza pesada de la página. */}
       <header className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="mb-3 text-xs uppercase tracking-[0.22em] text-brass-500">
@@ -198,7 +191,6 @@ export default function HomePage() {
         )}
       </header>
 
-      {/* Filtros en banda horizontal: la grilla se queda con todo el ancho. */}
       <section aria-label="Filtros" className="mb-8 border-y border-ink-800/80 py-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="relative lg:max-w-xs lg:flex-1">

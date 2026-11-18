@@ -9,9 +9,6 @@ import type { Categoria, GoogleBookCandidate, Libro } from "../types";
 interface Props {
   onClose: () => void;
   onCreated: (libro: Libro) => void;
-  /** Se llama cuando la importación guarda al menos un libro. La carga manual
-   *  devuelve el libro y se agrega a la grilla; una importación guarda varios,
-   *  así que lo único razonable es que el catálogo se vuelva a pedir. */
   onImported: () => void;
 }
 
@@ -20,7 +17,6 @@ const ESTADO_OPTIONS: { value: "DISPONIBLE" | "OCULTO"; label: string }[] = [
   { value: "OCULTO", label: "Oculto" },
 ];
 
-// ─── Manual tab ──────────────────────────────────────────────────────────────
 
 function ManualTab({
   categorias,
@@ -119,7 +115,6 @@ function ManualTab({
         </p>
       )}
 
-      {/* Portada */}
       <div>
         <label className="label">Portada</label>
         <div className="flex items-start gap-4">
@@ -171,7 +166,6 @@ function ManualTab({
         />
       </div>
 
-      {/* Título y Autor */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="label">
@@ -199,7 +193,6 @@ function ManualTab({
         </div>
       </div>
 
-      {/* Descripción */}
       <div>
         <label className="label">Descripción</label>
         <textarea
@@ -217,7 +210,6 @@ function ManualTab({
         )}
       </div>
 
-      {/* Editorial y Año */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="label">Editorial</label>
@@ -231,8 +223,6 @@ function ManualTab({
         </div>
         <div>
           <label className="label">Año de publicación</label>
-          {/* Solo dígitos: la API pide cuatro exactos y el 400 llegaba después
-              de haber subido la portada. */}
           <input
             type="text"
             inputMode="numeric"
@@ -245,7 +235,6 @@ function ManualTab({
         </div>
       </div>
 
-      {/* Estado */}
       <div>
         <label className="label">Estado</label>
         <div className="flex gap-3">
@@ -266,7 +255,6 @@ function ManualTab({
         </div>
       </div>
 
-      {/* Categorías */}
       <div>
         <label className="label">
           Categorías <span className="text-ember-400">*</span>
@@ -310,7 +298,6 @@ function ManualTab({
         )}
       </div>
 
-      {/* Botones */}
       <div className="flex justify-end gap-3 pt-2">
         <button
           type="button"
@@ -332,7 +319,6 @@ function ManualTab({
   );
 }
 
-// ─── Google Books tab ─────────────────────────────────────────────────────────
 
 function GoogleBooksTab({
   categorias,
@@ -406,9 +392,6 @@ function GoogleBooksTab({
       setSeleccionados(new Set());
       setQuery("");
 
-      // Los libros quedaban guardados y la interfaz decía lo contrario: el
-      // catálogo no se tocaba, así que el admin cerraba el modal, no veía nada
-      // nuevo, salía y volvía, y seguía sin ver nada.
       if (res.guardados > 0) {
         onImported();
       }
@@ -421,7 +404,6 @@ function GoogleBooksTab({
 
   return (
     <div className="px-6 py-5 space-y-5">
-      {/* Búsqueda */}
       <form onSubmit={handleBuscar} className="flex gap-2">
         <input
           type="text"
@@ -446,7 +428,6 @@ function GoogleBooksTab({
         </p>
       )}
 
-      {/* Resultado exitoso */}
       {resultado && (
         <>
           <div className="text-sm bg-sage-500/10 border border-sage-500/20 rounded-lg px-4 py-3 text-sage-400">
@@ -464,14 +445,12 @@ function GoogleBooksTab({
         </>
       )}
 
-      {/* Lista de candidatos */}
       {candidatos !== null && (
         <>
           {candidatos.length === 0 ? (
             <p className="text-ink-400 text-sm">No se encontraron resultados nuevos para esa búsqueda.</p>
           ) : (
             <>
-              {/* Controles de selección */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-ink-300">
                   {seleccionados.size} de {candidatos.length} seleccionados
@@ -485,7 +464,6 @@ function GoogleBooksTab({
                 </button>
               </div>
 
-              {/* Lista */}
               <div className="border border-ink-700 rounded-lg overflow-hidden max-h-72 overflow-y-auto">
                 {candidatos.map((libro, idx) => {
                   const seleccionado = seleccionados.has(idx);
@@ -498,7 +476,6 @@ function GoogleBooksTab({
                         idx !== candidatos.length - 1 ? "border-b border-ink-800" : ""
                       } ${seleccionado ? "bg-brass-500/12" : "hover:bg-ink-800"}`}
                     >
-                      {/* Checkbox */}
                       <span
                         className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${
                           seleccionado ? "border-brass-500 bg-brass-500" : "border-ink-600"
@@ -507,7 +484,6 @@ function GoogleBooksTab({
                         {seleccionado && <span className="text-[10px] font-bold leading-none text-ink-950">✓</span>}
                       </span>
 
-                      {/* Portada */}
                       {libro.portada ? (
                         <img
                           src={libro.portada}
@@ -518,7 +494,6 @@ function GoogleBooksTab({
                         <div className="w-8 h-11 bg-ink-700 rounded flex-shrink-0 border border-ink-700" />
                       )}
 
-                      {/* Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-ink-50 font-medium truncate">{libro.titulo}</p>
                         <p className="text-xs text-ink-300 truncate">{libro.autor}</p>
@@ -531,7 +506,6 @@ function GoogleBooksTab({
                 })}
               </div>
 
-              {/* Categoría + Importar */}
               <div className="space-y-3">
                 <div>
                   <label className="label">
@@ -587,7 +561,6 @@ function GoogleBooksTab({
         </>
       )}
 
-      {/* Cancelar cuando no hay resultados todavía */}
       {candidatos === null && !buscando && !resultado && (
         <div className="flex justify-end">
           <button
@@ -603,7 +576,6 @@ function GoogleBooksTab({
   );
 }
 
-// ─── Modal wrapper ────────────────────────────────────────────────────────────
 
 export default function AddBookModal({ onClose, onCreated, onImported }: Props) {
   const [tab, setTab] = useState<"manual" | "google">("manual");

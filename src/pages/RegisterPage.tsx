@@ -74,7 +74,6 @@ export default function RegisterPage() {
       navigate("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "No pudimos crear la cuenta.");
-      // El token ya se gastó en este intento: el siguiente necesita uno nuevo.
       turnstile.current?.reiniciar();
     } finally {
       setLoading(false);
@@ -161,8 +160,6 @@ export default function RegisterPage() {
             {...fieldProps("password")}
           />
 
-          {/* Los requisitos se marcan a medida que se escriben, en lugar de
-              aparecer como un reproche recién al enviar el formulario. */}
           <ul className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5">
             {reglasCumplidas.map((regla) => {
               const falla = passwordTocada && !regla.ok;

@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { rutaInternaSegura } from "../../lib/rutas";
 
-/**
- * `returnTo` lo escribe quien arma el enlace al login, asi que es una entrada
- * hostil: lo que se prueba es que nada que el navegador pueda leer como un
- * origen distinto sobreviva.
- */
 describe("rutaInternaSegura", () => {
   it("deja pasar una ruta interna", () => {
     expect(rutaInternaSegura("/favoritos")).toBe("/favoritos");

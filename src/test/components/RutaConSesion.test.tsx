@@ -20,8 +20,6 @@ const RUTAS = (
 
 describe("RutaConSesion", () => {
   it("sin sesion manda al login y se acuerda de adonde iba", () => {
-    // Sin el guard, la peticion salia igual, la API respondia 401 y el cliente
-    // mostraba "Tu sesion expiro" a alguien que nunca habia entrado.
     renderConRutas(RUTAS, { ruta: "/favoritos" });
 
     expect(screen.getByText("Formulario de ingreso")).toBeInTheDocument();

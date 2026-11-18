@@ -1,10 +1,8 @@
-/** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        // Neutrales cálidos: una sola familia de grises, tintada hacia el papel.
         ink: {
           50: "#f6f2ea",
           100: "#e7e1d7",
@@ -19,7 +17,6 @@ export default {
           900: "#121110",
           950: "#0c0b09",
         },
-        // Acento único: latón. Sobre relleno lleva texto ink-950, nunca blanco.
         brass: {
           300: "#e6c48f",
           400: "#d9ab68",
@@ -27,13 +24,11 @@ export default {
           600: "#a8763a",
           700: "#82592c",
         },
-        // Destructivo / error.
         ember: {
           400: "#e08a7e",
           500: "#cf6455",
           600: "#a94b3e",
         },
-        // Confirmación.
         sage: {
           400: "#8fbf9a",
           500: "#5f9c6f",
@@ -48,11 +43,9 @@ export default {
         tightest: "-0.035em",
       },
       borderRadius: {
-        // Contenedores más blandos que sus elementos internos.
         xs: "0.25rem",
       },
       boxShadow: {
-        // Sombras tintadas con el marrón del fondo, no negro puro.
         card: "0 1px 2px rgba(12, 11, 9, 0.6), 0 12px 28px -18px rgba(12, 11, 9, 0.9)",
         lift: "0 2px 4px rgba(12, 11, 9, 0.5), 0 22px 44px -20px rgba(12, 11, 9, 0.95)",
         panel: "0 32px 64px -28px rgba(12, 11, 9, 0.95)",

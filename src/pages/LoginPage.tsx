@@ -36,8 +36,6 @@ export default function LoginPage() {
     try {
       const response = await login(email.trim(), password);
       saveAuth(response);
-      // replace: si no, el boton Atras devuelve al formulario a alguien que ya
-      // inicio sesion.
       navigate(returnTo, { replace: true });
     } catch {
       setError("Email o contraseña incorrectos.");

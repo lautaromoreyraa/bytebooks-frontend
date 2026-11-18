@@ -36,8 +36,6 @@ function BackLink() {
   );
 }
 
-/** El backend expone `fechaResena` como java.util.Date: puede llegar ISO o
- *  epoch segun la config de Jackson. Normalizamos antes de mostrarla. */
 function parseFecha(valor: string): Date | null {
   const fecha = new Date(/^\d+$/.test(valor) ? Number(valor) : valor);
   return Number.isNaN(fecha.getTime()) ? null : fecha;
@@ -104,8 +102,6 @@ export default function BookDetailPage() {
           setTotalResenas(0);
         }
 
-        // El promedio lo calcula la API sobre todas las resenas. Cuando falla se
-        // deja en null: mostrar el de la primera pagina seria un dato inventado.
         if (resumenResult.status === "fulfilled") {
           setPromedio(resumenResult.value.promedio);
           setTotalResenas(resumenResult.value.total);
@@ -131,7 +127,6 @@ export default function BookDetailPage() {
       .catch(() => {});
   }, [auth, id]);
 
-  // Restaurar reseña pendiente si el usuario acaba de loguearse
   useEffect(() => {
     if (!auth || !id) return;
     const raw = sessionStorage.getItem(PENDING_RESENA_KEY);
@@ -166,14 +161,12 @@ export default function BookDetailPage() {
     };
   }, [menuOpen]);
 
-  /** Una resena propia cambia el promedio de todas: lo recalcula la API. */
   async function refrescarResumen(libroId: string) {
     try {
       const resumen = await getResumenDeResenas(libroId);
       setPromedio(resumen.promedio);
       setTotalResenas(resumen.total);
     } catch {
-      // El contador local ya se ajusto; el promedio se corrige al recargar.
     }
   }
 
@@ -182,11 +175,7 @@ export default function BookDetailPage() {
     setDeleting(true);
     try {
       await deleteLibro(id);
-      // El catalogo cacheado todavia lista el libro: sin esto, volver a la home
-      // lo muestra y clickearlo lleva a "No encontramos este libro".
       invalidarCatalogo();
-      // navigate(-1) no hacia nada si la ficha se abrio por link directo, y
-      // dejaba al admin parado en el libro que acababa de borrar.
       navigate("/", { replace: true });
     } catch {
       setDeleting(false);
@@ -240,8 +229,6 @@ export default function BookDetailPage() {
     try {
       const siguiente = paginaResenas + 1;
       const pagina = await getResenas(id, siguiente);
-      // Se filtran las ya presentes: si alguien publica mientras leés, la API
-      // corre los elementos entre páginas y llegarían duplicados.
       setResenas((prev) => {
         const vistas = new Set(prev.map((r) => r.id));
         return [...prev, ...pagina.content.filter((r) => !vistas.has(r.id))];
@@ -249,7 +236,6 @@ export default function BookDetailPage() {
       setTotalResenas(pagina.totalElements);
       setPaginaResenas(siguiente);
     } catch {
-      // sin cambios: el botón sigue disponible para reintentar
     } finally {
       setCargandoMas(false);
     }
@@ -265,7 +251,6 @@ export default function BookDetailPage() {
       setResenaAEliminar(null);
       if (id) void refrescarResumen(id);
     } catch {
-      // el diálogo queda abierto si falla
     } finally {
       setBorrandoResena(false);
     }
@@ -309,7 +294,6 @@ export default function BookDetailPage() {
       <BackLink />
 
       <article className="grid gap-10 lg:grid-cols-[minmax(240px,300px)_1fr] lg:gap-14">
-        {/* La portada acompaña el scroll mientras se leen las reseñas. */}
         <div className="mx-auto w-full max-w-[260px] lg:sticky lg:top-24 lg:mx-0 lg:max-w-none lg:self-start">
           <div className="relative overflow-hidden rounded-xl bg-ink-850 shadow-lift">
             {coverSrc ? (
@@ -441,8 +425,6 @@ export default function BookDetailPage() {
             </div>
           )}
 
-          {/* El ISBN no se muestra: para quien lee no dice nada. Sigue llegando
-              en la respuesta y se usa para buscar la portada en Open Library. */}
           {(libro.editorial || libro.anioPublicacion) && (
             <dl className="mt-7 flex flex-wrap gap-2.5">
               {libro.editorial && <MetaChip label="Editorial" value={libro.editorial} />}
@@ -608,8 +590,6 @@ export default function BookDetailPage() {
               </ul>
             )}
 
-            {/* La API pagina de a 10: sin esto el contador prometía reseñas
-                que no había forma de leer. */}
             {!todasCargadas && (
               <div className="mt-8 flex justify-center">
                 <button
@@ -633,7 +613,6 @@ export default function BookDetailPage() {
           onClose={() => setShowEditModal(false)}
           onUpdated={(updated) => {
             setLibro(updated);
-            // El titulo editado quedaba viejo en la grilla cacheada de la home.
             invalidarCatalogo();
             setShowEditModal(false);
           }}
